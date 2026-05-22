@@ -1,0 +1,8 @@
+[project]
+name = "deadlock"
+authors = []
+description = ""
+[contracts.deadlock]
+path = "contracts/deadlock.clar"
+clarity_version = 3
+epoch = 3.0

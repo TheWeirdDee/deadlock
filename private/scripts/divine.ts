@@ -43,7 +43,7 @@ const DEPLOYER = (process.env.FRIEND_DEPLOYER || 'SP3DBM7M6CEM4BW7XQX5VGH7KRC64F
 const TARGET_CONTRACTS: string[] = (
   process.env.DEADLOCK_CONTRACT
     ? [process.env.DEADLOCK_CONTRACT.trim()]
-    : ['deadlock-clarr']
+    : ['deadlock-clar']
 );
 
 const NETWORK_NAME = (process.env.STACKS_NETWORK || 'mainnet') as StacksNetworkName;

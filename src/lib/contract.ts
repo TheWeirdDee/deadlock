@@ -1,6 +1,6 @@
-import { StacksMainnet, StacksTestnet } from '@stacks/network';
+import { STACKS_MAINNET, STACKS_TESTNET } from '@stacks/network';
 import { 
-  callReadOnlyFunction, 
+  fetchCallReadOnlyFunction, 
   cvToJSON, 
   principalCV, 
   uintCV, 
@@ -12,8 +12,8 @@ import {
 } from '@stacks/transactions';
 
 const network = process.env.NEXT_PUBLIC_NETWORK === 'mainnet' 
-  ? new StacksMainnet() 
-  : new StacksTestnet();
+  ? STACKS_MAINNET 
+  : STACKS_TESTNET;
 
 const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS!;
 const contractName = process.env.NEXT_PUBLIC_CONTRACT_NAME!;
@@ -30,7 +30,7 @@ export async function getVowCount(): Promise<number> {
     senderAddress: contractAddress,
   };
 
-  const result = await callReadOnlyFunction(options);
+  const result = await fetchCallReadOnlyFunction(options);
   return Number(cvToJSON(result).value);
 }
 
@@ -44,7 +44,7 @@ export async function getVow(vowId: number) {
     senderAddress: contractAddress,
   };
 
-  const result = await callReadOnlyFunction(options);
+  const result = await fetchCallReadOnlyFunction(options);
   const json = cvToJSON(result);
   if (!json.value) return null;
   
@@ -61,7 +61,7 @@ export async function getSpectatorPool(vowId: number) {
     senderAddress: contractAddress,
   };
 
-  const result = await callReadOnlyFunction(options);
+  const result = await fetchCallReadOnlyFunction(options);
   return cvToJSON(result).value;
 }
 

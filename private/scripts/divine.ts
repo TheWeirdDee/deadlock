@@ -31,6 +31,8 @@ import {
   noneCV,
   stringUtf8CV,
   type ClarityValue,
+  callReadOnlyFunction,
+  cvToJSON,
 } from '@stacks/transactions';
 
 type StacksNetworkName = 'mainnet' | 'testnet';
@@ -183,17 +185,22 @@ function pickEligibleAction(
   self: Wallet,
   selfState: WalletState,
   pool: Wallet[],
-  now: number
+  now: number,
+  maxVowId: number
 ): Action | null {
   const candidates: ActionKind[] = [];
 
-  if (now - selfState.lastVoteTs >= VOTE_COOLDOWN_MS) candidates.push('vote-yes', 'vote-no', 'create-vow', 'submit-completion');
+  if (now - selfState.lastVoteTs >= VOTE_COOLDOWN_MS) {
+    if (maxVowId > 0) {
+      candidates.push('vote-yes', 'vote-no', 'submit-completion');
+    }
+    candidates.push('create-vow');
+  }
 
   if (candidates.length === 0) return null;
   const chosen = pick(candidates);
 
-  const randomVowId = uintCV(randInt(1, 50));
-  // Alternate between target contracts to maximise unique callers & txs on each
+  const randomVowId = uintCV(maxVowId > 0 ? randInt(1, maxVowId) : 1);
   const contractName = pick(TARGET_CONTRACTS);
 
   switch (chosen) {
@@ -209,7 +216,7 @@ function pickEligibleAction(
           stringUtf8CV("Bot Vow"), 
           stringUtf8CV("Farming description"), 
           uintCV(1), 
-          uintCV(1000000), 
+          uintCV(1), 
           uintCV(9999999), 
           noneCV(), 
           noneCV()
@@ -242,6 +249,22 @@ async function main(): Promise<void> {
     totalSucceeded: 0,
     totalFailed: 0,
   };
+
+  let maxVowId = 0;
+  try {
+    const result = await callReadOnlyFunction({
+      contractAddress: DEPLOYER,
+      contractName: TARGET_CONTRACTS[0],
+      functionName: 'get-vow-count',
+      functionArgs: [],
+      network: STACKS_NETWORK,
+      senderAddress: DEPLOYER,
+    });
+    maxVowId = Number(cvToJSON(result).value);
+    log(`initial on-chain vow count: ${maxVowId}`);
+  } catch (e) {
+    log(`failed to fetch vow count on startup: ${e}`);
+  }
 
   const nonceCache = new Map<string, bigint>();
   const nonceLocks = new Map<string, boolean>();
@@ -330,7 +353,7 @@ async function main(): Promise<void> {
         continue;
       }
 
-      const action = pickEligibleAction(w, ws, wallets, Date.now());
+      const action = pickEligibleAction(w, ws, wallets, Date.now(), maxVowId);
       if (!action) {
         if (!anyWalletEligibleNow()) {
           log(`[w${workerId}] no eligible actions left - exiting (cooldowns active)`);
@@ -365,6 +388,9 @@ async function main(): Promise<void> {
         if (action.kind === 'vote-yes' || action.kind === 'vote-no') {
           ws.lastVoteTs = now;
           ws.votesCast += 1;
+        }
+        if (action.kind === 'create-vow') {
+          maxVowId += 1;
         }
 
         balCache.set(w.address, bal > fee ? bal - fee : BigInt(0));

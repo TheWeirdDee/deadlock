@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "divine": "npx tsx private/scripts/divine.ts"
   },
   "dependencies": {
     "@stacks/auth": "7.4.0",

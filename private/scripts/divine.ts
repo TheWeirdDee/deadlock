@@ -146,6 +146,7 @@ type VowState = {
   id: number;
   creator: string;
   vowType: number;
+  stakeAmount: number;
   rival: string | null;
   causeWallet: string | null;
   status: number;
@@ -520,6 +521,7 @@ async function main(): Promise<void> {
             id: i,
             creator: cleaned.creator,
             vowType: cleaned.vowType,
+            stakeAmount: cleaned.stakeAmount,
             rival: cleaned.rival,
             causeWallet: cleaned.causeWallet,
             status: cleaned.status,
@@ -552,6 +554,7 @@ async function main(): Promise<void> {
               id,
               creator: cleaned.creator,
               vowType: cleaned.vowType,
+              stakeAmount: cleaned.stakeAmount,
               rival: cleaned.rival,
               causeWallet: cleaned.causeWallet,
               status: cleaned.status,

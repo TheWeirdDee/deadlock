@@ -28,8 +28,23 @@ export default function VowPage() {
   const userSession = new UserSession({ appConfig });
 
   useEffect(() => {
-    if (userSession.isUserSignedIn()) {
-      setUserData(userSession.loadUserData());
+    try {
+      if (userSession.isUserSignedIn()) {
+        setUserData(userSession.loadUserData());
+      }
+    } catch (e) {
+      console.error('Auth session error, clearing local storage:', e);
+      try {
+        localStorage.removeItem('blockstack-session');
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.startsWith('blockstack') || key.startsWith('stacks'))) {
+            localStorage.removeItem(key);
+          }
+        }
+      } catch (err) {
+        // ignore
+      }
     }
     fetchData();
   }, [id]);

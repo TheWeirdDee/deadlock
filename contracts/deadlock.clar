@@ -23,6 +23,7 @@
 (define-constant ERR-INVALID-TYPE (err u107))
 (define-constant ERR-CHALLENGE-WINDOW-CLOSED (err u108))
 (define-constant ERR-ALREADY-VOTED (err u109))
+(define-constant ERR-NOT-READY-FOR-VOTING (err u110))
 
 (define-constant VOW-TYPE-BURN u1)
 (define-constant VOW-TYPE-RIVAL u2)
@@ -210,7 +211,7 @@
   (let ((vow (unwrap! (get-vow vow-id) ERR-NOT-FOUND)))
     (asserts! (is-eq (get status vow) STATUS-CHALLENGED) ERR-UNAUTHORIZED)
     (asserts!
-      (< stacks-block-height (unwrap! (get challenge-end-block vow) ERR-NOT-FOUND))
+      (< stacks-block-height (unwrap! (get challenge-end-block vow) ERR-NOT-READY-FOR-VOTING))
       ERR-CHALLENGE-WINDOW-CLOSED
     )
     (asserts! (not (has-voted vow-id tx-sender)) ERR-ALREADY-VOTED)
@@ -228,7 +229,7 @@
 (define-public (finalize-challenged-vow (vow-id uint))
   (let (
     (vow (unwrap! (get-vow vow-id) ERR-NOT-FOUND))
-    (challenge-end (unwrap! (get challenge-end-block vow) ERR-NOT-FOUND))
+    (challenge-end (unwrap! (get challenge-end-block vow) ERR-NOT-READY-FOR-VOTING))
   )
     (asserts! (is-eq (get status vow) STATUS-CHALLENGED) ERR-UNAUTHORIZED)
     (asserts! (>= stacks-block-height challenge-end) ERR-CHALLENGE-WINDOW-CLOSED)

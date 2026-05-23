@@ -77,13 +77,62 @@ function jitteredFee(base: bigint, pct: number): bigint {
   return BigInt(Math.max(1000, Math.round(Number(base) * mult)));
 }
 
-function randomUsername(): string {
-  const charset = 'abcdefghijklmnopqrstuvwxyz0123456789';
-  const len = randInt(6, 14);
-  let s = '';
-  for (let i = 0; i < len; i++) s += charset[Math.floor(Math.random() * charset.length)];
-  s += crypto.randomBytes(2).toString('hex');
-  return s.slice(0, 20);
+function randomVowTitle(): string {
+  const words = ['Ship', 'Deploy', 'Code', 'Debug', 'Refactor', 'Verify', 'Launch', 'Solve', 'Optimize', 'Test'];
+  const nouns = ['Frontend', 'Backend', 'Database', 'Contract', 'AI Agent', 'System', 'API', 'App', 'Script', 'Feature'];
+  const seed = crypto.randomBytes(2).toString('hex');
+  return `${pick(words)} ${pick(nouns)} #${seed}`;
+}
+
+function cleanCV(obj: any): any {
+  if (obj === null || obj === undefined) return null;
+  
+  if (typeof obj === 'object') {
+    if ('type' in obj && obj.type && typeof obj.type === 'string' && obj.type.startsWith('(optional')) {
+      if (obj.value === null || obj.value === undefined || obj.value === 'none') {
+        return null;
+      }
+      return cleanCV(obj.value);
+    }
+    
+    if ('type' in obj && obj.type && typeof obj.type === 'string' && obj.type.startsWith('(tuple')) {
+      const tupleObj: any = {};
+      for (const [k, v] of Object.entries(obj.value)) {
+        const cleanedKey = k.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
+        const cleanedVal = cleanCV(v);
+        tupleObj[k] = cleanedVal;
+        tupleObj[cleanedKey] = cleanedVal;
+      }
+      return tupleObj;
+    }
+    
+    if ('type' in obj && 'value' in obj) {
+      if (obj.type === 'uint' || obj.type === 'int') {
+        return Number(obj.value);
+      }
+      if (obj.type === 'bool') {
+        return obj.value === true || obj.value === 'true';
+      }
+      if (obj.type === 'principal') {
+        return obj.value;
+      }
+      if (obj.type && (obj.type.startsWith('string') || obj.type.startsWith('(string'))) {
+        return obj.value;
+      }
+      return cleanCV(obj.value);
+    }
+    
+    const newObj: any = {};
+    for (const [k, v] of Object.entries(obj)) {
+      const cleanedKey = k.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
+      const cleanedVal = cleanCV(v);
+      newObj[k] = cleanedVal;
+      newObj[cleanedKey] = cleanedVal;
+    }
+    return newObj;
+  }
+  
+  return obj;
 }
 
 type Wallet = { index: number; address: string; privateKey: string };
@@ -93,9 +142,22 @@ type WalletState = {
   votesCast: number;
 };
 
+type VowState = {
+  id: number;
+  creator: string;
+  vowType: number;
+  rival: string | null;
+  causeWallet: string | null;
+  status: number;
+  rivalStake: number;
+  deadlineBlock: number;
+  challengeEndBlock: number | null;
+};
+
 type State = {
   startedAt: string;
   walletsState: Record<number, WalletState>;
+  vowsState: Record<number, VowState>;
   totalAttempted: number;
   totalSucceeded: number;
   totalFailed: number;
@@ -152,7 +214,9 @@ async function loadWallets(): Promise<Wallet[]> {
 
 async function loadState(): Promise<State | null> {
   try {
-    return JSON.parse(await readFile(STATE_PATH, 'utf8')) as State;
+    const s = JSON.parse(await readFile(STATE_PATH, 'utf8')) as State;
+    if (!s.vowsState) s.vowsState = {};
+    return s;
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code === 'ENOENT') return null;
     throw err;
@@ -174,7 +238,7 @@ function ensureWalletState(s: State, idx: number): WalletState {
   return s.walletsState[idx];
 }
 
-type ActionKind = 'vote-yes' | 'vote-no' | 'create-vow' | 'submit-completion' | 'accept-rival-vow' | 'spectate';
+type ActionKind = 'vote-yes' | 'vote-no' | 'create-vow' | 'submit-completion' | 'accept-rival-vow' | 'spectate' | 'finalize' | 'claim-failure' | 'claim-winnings';
 type Action = {
   kind: ActionKind;
   functionName: string;
@@ -182,73 +246,214 @@ type Action = {
   contractName: string;
 };
 
-function pickEligibleAction(
+async function pickEligibleAction(
   self: Wallet,
   selfState: WalletState,
   pool: Wallet[],
   now: number,
-  maxVowId: number
-): Action | null {
-  const candidates: ActionKind[] = [];
+  maxVowId: number,
+  vowsState: Record<number, VowState>,
+  blockHeight: number
+): Promise<Action | null> {
+  // Check if wallet is in vote cooldown
+  if (now - selfState.lastVoteTs < VOTE_COOLDOWN_MS) {
+    return null;
+  }
 
-  if (now - selfState.lastVoteTs >= VOTE_COOLDOWN_MS) {
-    if (maxVowId > 0) {
-      candidates.push('vote-yes', 'vote-no', 'submit-completion', 'accept-rival-vow', 'spectate');
+  const candidates: Action[] = [];
+  const contractName = TARGET_CONTRACTS[0];
+
+  // 1. create-vow (always a candidate)
+  candidates.push({
+    kind: 'create-vow',
+    functionName: 'create-vow',
+    contractName,
+    args: [], // Will generate details when chosen
+  });
+
+  // 2. accept-rival-vow
+  for (const v of Object.values(vowsState)) {
+    if (
+      v.vowType === 2 &&
+      v.status === 1 &&
+      v.rival === self.address &&
+      v.rivalStake === 0 &&
+      blockHeight < v.deadlineBlock
+    ) {
+      candidates.push({
+        kind: 'accept-rival-vow',
+        functionName: 'accept-rival-vow',
+        contractName,
+        args: [uintCV(v.id), uintCV(v.stakeAmount)],
+      });
     }
-    candidates.push('create-vow');
+  }
+
+  // 3. submit-completion
+  for (const v of Object.values(vowsState)) {
+    if (
+      v.creator === self.address &&
+      v.status === 1 &&
+      blockHeight <= v.deadlineBlock
+    ) {
+      candidates.push({
+        kind: 'submit-completion',
+        functionName: 'submit-completion',
+        contractName,
+        args: [uintCV(v.id), stringUtf8CV("https://proof.com")],
+      });
+    }
+  }
+
+  // 4. vote-yes / vote-no
+  const challengedVows = Object.values(vowsState).filter(
+    (v) => v.status === 4 && (v.challengeEndBlock === null || blockHeight < v.challengeEndBlock)
+  );
+  for (const v of challengedVows) {
+    try {
+      const votedResult = await callReadOnlyFunction({
+        contractAddress: DEPLOYER,
+        contractName,
+        functionName: 'has-voted',
+        functionArgs: [uintCV(v.id), standardPrincipalCV(self.address)],
+        network: STACKS_NETWORK,
+        senderAddress: self.address,
+      });
+      const voted = cleanCV(cvToJSON(votedResult));
+      if (!voted) {
+        candidates.push({
+          kind: 'vote-yes',
+          functionName: 'vote-on-vow',
+          contractName,
+          args: [uintCV(v.id), trueCV()],
+        });
+        candidates.push({
+          kind: 'vote-no',
+          functionName: 'vote-on-vow',
+          contractName,
+          args: [uintCV(v.id), falseCV()],
+        });
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  // 5. spectate
+  const activeVows = Object.values(vowsState).filter(
+    (v) => v.status === 1 && blockHeight < v.deadlineBlock
+  );
+  const sampleActiveVows = activeVows.slice(0, 3);
+  for (const v of sampleActiveVows) {
+    try {
+      const betResult = await callReadOnlyFunction({
+        contractAddress: DEPLOYER,
+        contractName,
+        functionName: 'get-spectator-bet',
+        functionArgs: [uintCV(v.id), standardPrincipalCV(self.address)],
+        network: STACKS_NETWORK,
+        senderAddress: self.address,
+      });
+      const cleanedBet = cleanCV(cvToJSON(betResult));
+      if (cleanedBet === null) {
+        const prediction = Math.random() > 0.5;
+        const betAmount = randInt(100, 500);
+        candidates.push({
+          kind: 'spectate',
+          functionName: 'spectate',
+          contractName,
+          args: [uintCV(v.id), prediction ? trueCV() : falseCV(), uintCV(betAmount)],
+        });
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  // 6. finalize
+  for (const v of Object.values(vowsState)) {
+    if (
+      v.status === 4 &&
+      v.challengeEndBlock !== null &&
+      blockHeight >= v.challengeEndBlock
+    ) {
+      candidates.push({
+        kind: 'finalize',
+        functionName: 'finalize-challenged-vow',
+        contractName,
+        args: [uintCV(v.id)],
+      });
+    }
+  }
+
+  // 7. claim-failure
+  for (const v of Object.values(vowsState)) {
+    if (
+      v.status === 1 &&
+      blockHeight > v.deadlineBlock
+    ) {
+      candidates.push({
+        kind: 'claim-failure',
+        functionName: 'claim-failure',
+        contractName,
+        args: [uintCV(v.id)],
+      });
+    }
+  }
+
+  // 8. claim-winnings
+  const settledVows = Object.values(vowsState).filter(
+    (v) => v.status === 2 || v.status === 3
+  );
+  const sampleSettledVows = settledVows.slice(0, 3);
+  for (const v of sampleSettledVows) {
+    try {
+      const betResult = await callReadOnlyFunction({
+        contractAddress: DEPLOYER,
+        contractName,
+        functionName: 'get-spectator-bet',
+        functionArgs: [uintCV(v.id), standardPrincipalCV(self.address)],
+        network: STACKS_NETWORK,
+        senderAddress: self.address,
+      });
+      const cleanedBet = cleanCV(cvToJSON(betResult));
+      if (cleanedBet && !cleanedBet.claimed) {
+        const prediction = cleanedBet.prediction;
+        const vowSucceeded = v.status === 2;
+        if (prediction === vowSucceeded) {
+          candidates.push({
+            kind: 'claim-winnings',
+            functionName: 'claim-spectator-winnings',
+            contractName,
+            args: [uintCV(v.id)],
+          });
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
   }
 
   if (candidates.length === 0) return null;
   const chosen = pick(candidates);
 
-  const randomVowId = uintCV(maxVowId > 0 ? randInt(1, maxVowId) : 1);
-  const contractName = pick(TARGET_CONTRACTS);
-
-  switch (chosen) {
-    case 'vote-yes':
-      return { kind: 'vote-yes', functionName: 'vote-on-vow', args: [randomVowId, trueCV()], contractName };
-    case 'vote-no':
-      return { kind: 'vote-no', functionName: 'vote-on-vow', args: [randomVowId, falseCV()], contractName };
-    case 'create-vow': {
-      const vowType = randInt(1, 3);
-      const otherWallet = pick(pool.filter(w => w.address !== self.address));
-      const rivalVal = vowType === 2 ? someCV(standardPrincipalCV(otherWallet.address)) : noneCV();
-      const causeVal = vowType === 3 ? someCV(standardPrincipalCV(otherWallet.address)) : noneCV();
-      return { 
-        kind: 'create-vow', 
-        functionName: 'create-vow', 
-        args: [
-          stringUtf8CV("Bot Vow"), 
-          stringUtf8CV("Farming description"), 
-          uintCV(vowType), 
-          uintCV(2000), // 0.002 STX
-          uintCV(9999999), 
-          rivalVal, 
-          causeVal
-        ], 
-        contractName 
-      };
-    }
-    case 'accept-rival-vow':
-      return {
-        kind: 'accept-rival-vow',
-        functionName: 'accept-rival-vow',
-        args: [randomVowId, uintCV(2000)], // 0.002 STX matching stake
-        contractName
-      };
-    case 'spectate': {
-      const prediction = Math.random() > 0.5;
-      const betAmount = randInt(100, 1000); // random bet amount (minimum 100 micro-STX)
-      return {
-        kind: 'spectate',
-        functionName: 'spectate',
-        args: [randomVowId, prediction ? trueCV() : falseCV(), uintCV(betAmount)],
-        contractName
-      };
-    }
-    case 'submit-completion':
-      return { kind: 'submit-completion', functionName: 'submit-completion', args: [randomVowId, stringUtf8CV("https://proof.com")], contractName };
+  if (chosen.kind === 'create-vow') {
+    const vowType = randInt(1, 3);
+    const otherWallet = pick(pool.filter(w => w.address !== self.address));
+    const rivalVal = vowType === 2 ? someCV(standardPrincipalCV(otherWallet.address)) : noneCV();
+    const causeVal = vowType === 3 ? someCV(standardPrincipalCV(otherWallet.address)) : noneCV();
+    chosen.args = [
+      stringUtf8CV(randomVowTitle()),
+      stringUtf8CV("Farming description"),
+      uintCV(vowType),
+      uintCV(2000), // 0.002 STX
+      uintCV(blockHeight + randInt(144, 288)),
+      rivalVal,
+      causeVal
+    ];
   }
+
+  return chosen;
 }
 
 function shortAddr(a: string): string {
@@ -268,13 +473,26 @@ async function main(): Promise<void> {
   const state: State = (await loadState()) ?? {
     startedAt: new Date().toISOString(),
     walletsState: {},
+    vowsState: {},
     totalAttempted: 0,
     totalSucceeded: 0,
     totalFailed: 0,
   };
 
+  async function fetchBlockHeight(): Promise<number> {
+    const res = await fetch(`${HIRO_API}/v2/info`, { headers: apiHeaders() });
+    if (!res.ok) throw new Error(`HTTP ${res.status} info`);
+    const j = (await res.json()) as { stacks_tip_height: number };
+    return j.stacks_tip_height;
+  }
+
   let maxVowId = 0;
-  try {
+  const vowsState: Record<number, VowState> = state.vowsState || {};
+
+  async function syncVowsState(): Promise<number> {
+    const blockHeight = await fetchBlockHeight();
+    
+    // 1. Fetch max vow ID
     const result = await callReadOnlyFunction({
       contractAddress: DEPLOYER,
       contractName: TARGET_CONTRACTS[0],
@@ -283,10 +501,83 @@ async function main(): Promise<void> {
       network: STACKS_NETWORK,
       senderAddress: DEPLOYER,
     });
-    maxVowId = Number(cvToJSON(result).value);
-    log(`initial on-chain vow count: ${maxVowId}`);
+    const chainMaxId = Number(cvToJSON(result).value);
+    
+    // 2. Fetch details for new vows
+    for (let i = maxVowId + 1; i <= chainMaxId; i++) {
+      try {
+        const vowResult = await callReadOnlyFunction({
+          contractAddress: DEPLOYER,
+          contractName: TARGET_CONTRACTS[0],
+          functionName: 'get-vow',
+          functionArgs: [uintCV(i)],
+          network: STACKS_NETWORK,
+          senderAddress: DEPLOYER,
+        });
+        const cleaned = cleanCV(cvToJSON(vowResult));
+        if (cleaned) {
+          vowsState[i] = {
+            id: i,
+            creator: cleaned.creator,
+            vowType: cleaned.vowType,
+            rival: cleaned.rival,
+            causeWallet: cleaned.causeWallet,
+            status: cleaned.status,
+            rivalStake: cleaned.rivalStake,
+            deadlineBlock: cleaned.deadlineBlock,
+            challengeEndBlock: cleaned.challengeEndBlock,
+          };
+        }
+      } catch (err) {
+        log(`failed to fetch vow ${i}: ${err}`);
+      }
+    }
+    
+    // 3. Re-fetch details for any vow that is currently non-terminal (status 1 or 4)
+    for (const [idStr, vow] of Object.entries(vowsState)) {
+      const id = Number(idStr);
+      if (vow.status === 1 || vow.status === 4) {
+        try {
+          const vowResult = await callReadOnlyFunction({
+            contractAddress: DEPLOYER,
+            contractName: TARGET_CONTRACTS[0],
+            functionName: 'get-vow',
+            functionArgs: [uintCV(id)],
+            network: STACKS_NETWORK,
+            senderAddress: DEPLOYER,
+          });
+          const cleaned = cleanCV(cvToJSON(vowResult));
+          if (cleaned) {
+            vowsState[id] = {
+              id,
+              creator: cleaned.creator,
+              vowType: cleaned.vowType,
+              rival: cleaned.rival,
+              causeWallet: cleaned.causeWallet,
+              status: cleaned.status,
+              rivalStake: cleaned.rivalStake,
+              deadlineBlock: cleaned.deadlineBlock,
+              challengeEndBlock: cleaned.challengeEndBlock,
+            };
+          }
+        } catch (err) {
+          log(`failed to re-sync vow ${id}: ${err}`);
+        }
+      }
+    }
+    
+    maxVowId = chainMaxId;
+    state.vowsState = vowsState;
+    return blockHeight;
+  }
+
+  // Initial Sync
+  try {
+    log(`running initial sync...`);
+    const initialHeight = await syncVowsState();
+    log(`initial sync ok: maxVowId=${maxVowId} height=${initialHeight}`);
   } catch (e) {
-    log(`failed to fetch vow count on startup: ${e}`);
+    log(`failed to perform initial sync: ${e}`);
   }
 
   const nonceCache = new Map<string, bigint>();
@@ -376,7 +667,16 @@ async function main(): Promise<void> {
         continue;
       }
 
-      const action = pickEligibleAction(w, ws, wallets, Date.now(), maxVowId);
+      let blockHeight = 0;
+      try {
+        blockHeight = await syncVowsState();
+      } catch (err) {
+        log(`[w${workerId}] failed to sync vows/block height: ${err}`);
+        await sleep(5000);
+        continue;
+      }
+
+      const action = await pickEligibleAction(w, ws, wallets, Date.now(), maxVowId, vowsState, blockHeight);
       if (!action) {
         if (!anyWalletEligibleNow()) {
           log(`[w${workerId}] no eligible actions left - exiting (cooldowns active)`);
@@ -408,12 +708,9 @@ async function main(): Promise<void> {
         });
 
         const now = Date.now();
+        ws.lastVoteTs = now; // Any successful broadcast triggers the cooldown for this wallet
         if (action.kind === 'vote-yes' || action.kind === 'vote-no') {
-          ws.lastVoteTs = now;
           ws.votesCast += 1;
-        }
-        if (action.kind === 'create-vow') {
-          maxVowId += 1;
         }
 
         balCache.set(w.address, bal > fee ? bal - fee : BigInt(0));
@@ -424,11 +721,9 @@ async function main(): Promise<void> {
         state.totalFailed += 1;
         const msg = err instanceof Error ? err.message : String(err);
         log(`[w${workerId}] fail ${action.kind} wallet=${shortAddr(w.address)} err=${msg.slice(0, 200)}`);
-        // If contract said "cooldown active" or "username taken", flip our local
-        // flags so we don't retry this action on the same wallet immediately.
         const now = Date.now();
         if (/COOLDOWN/.test(msg)) {
-          if (action.kind === 'vote-yes' || action.kind === 'vote-no') ws.lastVoteTs = now;
+          ws.lastVoteTs = now;
         }
         await saveState(state);
       }

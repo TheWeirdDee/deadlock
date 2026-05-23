@@ -78,3 +78,26 @@
 .animate-pulse-slow {
   animation: pulse-slow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
+
+@keyframes rotate-clockwise {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes rotate-counter {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-360deg); }
+}
+
+.animate-orbit-1 {
+  animation: rotate-clockwise 45s linear infinite;
+}
+
+.animate-orbit-2 {
+  animation: rotate-counter 60s linear infinite;
+}
+
+.animate-orbit-3 {
+  animation: rotate-clockwise 90s linear infinite;
+}
+

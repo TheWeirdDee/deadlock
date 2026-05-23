@@ -17,6 +17,9 @@
 (define-constant ERR-ALREADY-VOTED (err u109))
 (define-constant ERR-NOT-READY-FOR-VOTING (err u110))
 
+(define-constant MIN-STAKE u2000) ;; 0.002 STX
+(define-constant MIN-BET u100)    ;; 0.0001 STX
+
 (define-constant VOW-TYPE-BURN u1)
 (define-constant VOW-TYPE-RIVAL u2)
 (define-constant VOW-TYPE-CAUSE u3)
@@ -109,7 +112,7 @@
     (cause-wallet (optional principal))
   )
   (let ((vow-id (+ (var-get vow-nonce) u1)))
-    (asserts! (> stake-amount u0) ERR-INVALID-AMOUNT)
+    (asserts! (>= stake-amount MIN-STAKE) ERR-INVALID-AMOUNT)
     (asserts! (> deadline-block stacks-block-height) ERR-DEADLINE-PASSED)
     (asserts!
       (or (is-eq vow-type VOW-TYPE-BURN)
@@ -153,6 +156,7 @@
     (asserts! (is-eq (get status vow) STATUS-ACTIVE) ERR-ALREADY-SETTLED)
     ;; Prevent rival from double-accepting and trapping extra STX
     (asserts! (is-eq (get rival-stake vow) u0) ERR-ALREADY-EXISTS)
+    (asserts! (>= stake-amount MIN-STAKE) ERR-INVALID-AMOUNT)
     (asserts! (>= stake-amount (get stake-amount vow)) ERR-INVALID-AMOUNT)
     (try! (stx-transfer? stake-amount tx-sender (unwrap-panic SELF)))
     (map-set vows { vow-id: vow-id } (merge vow { rival-stake: stake-amount }))
@@ -167,7 +171,7 @@
   )
     (asserts! (is-eq (get status vow) STATUS-ACTIVE) ERR-ALREADY-SETTLED)
     (asserts! (< stacks-block-height (get deadline-block vow)) ERR-DEADLINE-PASSED)
-    (asserts! (> amount u0) ERR-INVALID-AMOUNT)
+    (asserts! (>= amount MIN-BET) ERR-INVALID-AMOUNT)
     (asserts! (is-none (get-spectator-bet vow-id tx-sender)) ERR-ALREADY-EXISTS)
     (try! (stx-transfer? amount tx-sender (unwrap-panic SELF)))
     (map-set spectator-bets { vow-id: vow-id, spectator: tx-sender }

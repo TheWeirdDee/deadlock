@@ -5,6 +5,9 @@ import { Providers } from "./providers";
 export const metadata: Metadata = {
   title: "DEADLOCK | Public Accountability on Bitcoin",
   description: "Put your STX where your mouth is. Public accountability vows secured by Stacks and Bitcoin.",
+  other: {
+    "talentapp:project_verification": "c9e48fbe31a3afd7ad95f7148a5ecddb2ea1214a0560a124e949b2a62d01d1e303cdef8b627594293ab183bea71d803970e33cc9a50d9e024faed97074b88c5e"
+  }
 };
 
 export default function RootLayout({

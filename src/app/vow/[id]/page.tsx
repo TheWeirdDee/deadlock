@@ -22,6 +22,7 @@ export default function VowPage() {
   const [pool, setPool] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState<any>(null);
+  const [proofUrl, setProofUrl] = useState('');
 
   const appConfig = new AppConfig(['store_write', 'publish_data']);
   const userSession = new UserSession({ appConfig });
@@ -72,6 +73,23 @@ export default function VowPage() {
       anchorMode: AnchorMode.Any,
       postConditionMode: PostConditionMode.Allow,
       onFinish: () => fetchData(),
+    });
+  };
+
+  const handleSubmitProof = async () => {
+    if (!proofUrl) return;
+    await doContractCall({
+      contractAddress: contractDetails.address,
+      contractName: contractDetails.name,
+      functionName: 'submit-completion',
+      functionArgs: [uintCV(id.toString()), stringUtf8CV(proofUrl)],
+      network: getNetwork(),
+      anchorMode: AnchorMode.Any,
+      postConditionMode: PostConditionMode.Allow,
+      onFinish: () => {
+        setProofUrl('');
+        fetchData();
+      },
     });
   };
 
@@ -145,8 +163,14 @@ export default function VowPage() {
               <h3 className="text-3xl font-bold mb-4">SUBMIT PROOF</h3>
               <p className="mb-8 opacity-70">Finished your challenge? Provide a URL to proof (Twitter thread, GitHub PR, etc.) to trigger the challenge window.</p>
               <div className="flex gap-4">
-                <input id="proof-url" className="flex-grow bg-white/5 border border-white/10 p-3 outline-none" placeholder="https://..." />
-                <button className="btn-primary">SUBMIT</button>
+                <input 
+                  id="proof-url" 
+                  value={proofUrl}
+                  onChange={(e) => setProofUrl(e.target.value)}
+                  className="flex-grow bg-white/5 border border-white/10 p-3 outline-none focus:border-white transition-colors" 
+                  placeholder="https://..." 
+                />
+                <button onClick={handleSubmitProof} className="btn-primary">SUBMIT</button>
               </div>
             </section>
           )}

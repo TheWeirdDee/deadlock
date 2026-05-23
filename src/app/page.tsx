@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react';
 import { useConnect } from '@stacks/connect-react';
 import { AppConfig, UserSession } from '@stacks/connect';
 import { motion, AnimatePresence } from 'framer-motion';
+import gsap from 'gsap';
+import { useGSAP } from '@gsap/react';
+import { useRef } from 'react';
 import Link from 'next/link';
 import { getVowCount, getVow, contractDetails } from '@/lib/contract';
 import { VOW_TYPES, VOW_STATUS } from '@/lib/types';
@@ -15,6 +18,14 @@ export default function Home() {
   const [vows, setVows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const container = useRef<HTMLDivElement>(null);
+
+  useGSAP(() => {
+    const tl = gsap.timeline();
+    tl.from('.hero-title-word', { y: 100, opacity: 0, duration: 1, stagger: 0.15, ease: 'power4.out', delay: 0.2 })
+      .from('.hero-subtitle', { y: 20, opacity: 0, duration: 0.8, ease: 'power2.out' }, '-=0.5')
+      .from('.hero-btn', { scale: 0.9, opacity: 0, duration: 0.5, stagger: 0.15, ease: 'back.out(1.7)' }, '-=0.4');
+  }, { scope: container });
 
   const appConfig = new AppConfig(['store_write', 'publish_data']);
   const userSession = new UserSession({ appConfig });
@@ -53,11 +64,12 @@ export default function Home() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center p-4 md:p-12 lg:p-24 relative">
-      {/* Background Decor */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none opacity-20">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-red-500 rounded-full blur-[120px] animate-pulse-slow"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-500 rounded-full blur-[120px] animate-pulse-slow" style={{ animationDelay: '2s' }}></div>
+    <main ref={container} className="flex min-h-screen flex-col items-center p-4 md:p-12 lg:p-24 relative overflow-hidden">
+      {/* Dynamic Network Nodes Overlay */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none opacity-30 mix-blend-screen">
+        <div className="absolute top-[10%] left-[20%] w-[500px] h-[500px] bg-red-600/20 rounded-full blur-[150px] animate-pulse-slow"></div>
+        <div className="absolute bottom-[10%] right-[20%] w-[600px] h-[600px] bg-blue-600/20 rounded-full blur-[150px] animate-pulse-slow" style={{ animationDelay: '3s' }}></div>
+        <div className="absolute top-[50%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-purple-600/10 rounded-full blur-[200px]"></div>
       </div>
 
       {/* Header */}
@@ -82,29 +94,31 @@ export default function Home() {
       </header>
 
       {/* Hero */}
-      <section className="w-full max-w-4xl text-center mb-24">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-        >
-          <h2 className="text-4xl sm:text-6xl md:text-8xl font-bold mb-6 tracking-tight leading-none">
-            PUT YOUR <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-blue-500 to-green-400">STX</span> WHERE YOUR MOUTH IS.
+      <section className="w-full max-w-5xl text-center mb-32 mt-12 relative z-10">
+        <div className="overflow-hidden mb-6">
+          <h2 className="text-5xl sm:text-7xl md:text-9xl font-bold tracking-tight leading-[0.9] flex flex-wrap justify-center gap-x-4 gap-y-2">
+            <span className="hero-title-word inline-block text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">PUT</span>
+            <span className="hero-title-word inline-block text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">YOUR</span>
+            <span className="hero-title-word inline-block text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-purple-500 to-blue-500 drop-shadow-[0_0_30px_rgba(168,85,247,0.5)]">STX</span>
+            <span className="hero-title-word inline-block text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">WHERE</span>
+            <span className="hero-title-word inline-block text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">YOUR</span>
+            <span className="hero-title-word inline-block text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">MOUTH</span>
+            <span className="hero-title-word inline-block text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">IS.</span>
           </h2>
-          <p className="text-base sm:text-xl opacity-60 max-w-2xl mx-auto mb-10 px-4">
-            Secure, decentralized accountability vows. Burn it, give it to a rival, or support a cause. 
-            Public failure is the ultimate motivator.
-          </p>
-          <div className="flex flex-wrap justify-center gap-4">
-            <button 
-              onClick={() => setIsModalOpen(true)}
-              className="btn-primary py-4 px-10 text-xl"
-            >
-              Create New Vow
-            </button>
-            <button className="btn-outline py-4 px-10 text-xl">Browse All</button>
-          </div>
-        </motion.div>
+        </div>
+        <p className="hero-subtitle text-lg sm:text-2xl text-gray-400 max-w-3xl mx-auto mb-12 px-4 font-space">
+          Secure, decentralized accountability vows. Burn it, give it to a rival, or support a cause. 
+          <span className="text-white block mt-2 font-bold">Public failure is the ultimate motivator.</span>
+        </p>
+        <div className="flex flex-wrap justify-center gap-6">
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="hero-btn btn-primary shadow-[0_0_30px_rgba(255,255,255,0.15)]"
+          >
+            Create New Vow
+          </button>
+          <button className="hero-btn btn-outline bg-black/50 backdrop-blur-md">Browse All</button>
+        </div>
       </section>
 
       {/* Vows Feed */}

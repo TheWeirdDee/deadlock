@@ -6,19 +6,44 @@
 
 @layer base {
   body {
-    @apply bg-background text-foreground font-space overflow-x-hidden;
+    @apply bg-[#030303] text-gray-200 font-space overflow-x-hidden relative min-h-screen;
+    background-image: 
+      radial-gradient(circle at 15% 50%, rgba(40, 10, 80, 0.15), transparent 25%),
+      radial-gradient(circle at 85% 30%, rgba(10, 40, 80, 0.15), transparent 25%);
+    background-attachment: fixed;
+  }
+  
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image: 
+      linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 50px 50px;
+    z-index: -1;
+    pointer-events: none;
+    mask-image: radial-gradient(circle at center, black 40%, transparent 80%);
+    -webkit-mask-image: radial-gradient(circle at center, black 40%, transparent 80%);
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-bebas tracking-wider;
+    @apply font-bebas tracking-wider text-white;
   }
 }
 
 @layer components {
   .glass-card {
-    background: rgba(20, 20, 20, 0.7);
-    backdrop-filter: blur(12px);
-    @apply border border-card-border rounded-[4px];
+    background: rgba(10, 10, 12, 0.6);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(255,255,255,0.02);
+    @apply rounded-xl transition-all duration-300;
+  }
+  .glass-card:hover {
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(255,255,255,0.05);
   }
 
   .glow-burn { @apply shadow-glow-burn border-burn; }
@@ -26,11 +51,11 @@
   .glow-cause { @apply shadow-glow-cause border-cause; }
 
   .btn-primary {
-    @apply px-6 py-2 bg-white text-black font-bold uppercase transition-all hover:bg-gray-200 active:scale-95 font-bebas;
+    @apply px-8 py-3 bg-white text-black font-bold uppercase transition-all duration-300 hover:bg-gray-200 hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] active:scale-95 font-bebas rounded-md tracking-widest text-lg;
   }
 
   .btn-outline {
-    @apply px-6 py-2 border border-white text-white font-bold uppercase transition-all hover:bg-white hover:text-black active:scale-95 font-bebas;
+    @apply px-8 py-3 border border-white/30 text-white font-bold uppercase transition-all duration-300 hover:bg-white/10 hover:border-white hover:shadow-[0_0_15px_rgba(255,255,255,0.2)] active:scale-95 font-bebas rounded-md tracking-widest text-lg;
   }
 
   .status-badge {

@@ -1,11 +1,3 @@
-;; ============================================================
-;; DEADLOCK
-;; "Your word, on Bitcoin. Forever."
-;; Stacks Mainnet — Clarity 4 Smart Contract
-;; ============================================================
-
-;; ---- CONSTANTS ----
-
 (define-constant CONTRACT-OWNER tx-sender)
 (define-constant BURN-ADDRESS 'SP000000000000000000002Q6VF78)
 

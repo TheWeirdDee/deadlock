@@ -16,10 +16,13 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
 
+import { StacksMainnet, StacksTestnet } from '@stacks/network';
 import {
+  AnchorMode,
   getAddressFromPrivateKey,
   makeContractCall,
-  serializeTransactionBytes,
+  broadcastTransaction,
+  PostConditionMode,
   standardPrincipalCV,
   stringAsciiCV,
   uintCV,
@@ -28,10 +31,9 @@ import {
   noneCV,
   stringUtf8CV,
   type ClarityValue,
-  type StacksTransactionWire,
 } from '@stacks/transactions';
 
-type StacksNetwork = 'mainnet' | 'testnet';
+type StacksNetworkName = 'mainnet' | 'testnet';
 
 const DEPLOYER = (process.env.FRIEND_DEPLOYER || 'SP3DBM7M6CEM4BW7XQX5VGH7KRC64FD11X3N1D2DV').trim();
 // Both deployed contracts — alternate between them to maximize unique callers per contract
@@ -41,8 +43,9 @@ const TARGET_CONTRACTS: string[] = (
     : ['deadlock-clarr']
 );
 
-const NETWORK = (process.env.STACKS_NETWORK || 'mainnet') as StacksNetwork;
-const HIRO_API = (process.env.HIRO_API_BASE || 'https://api.mainnet.hiro.so').replace(/\/+$/, '');
+const NETWORK_NAME = (process.env.STACKS_NETWORK || 'mainnet') as StacksNetworkName;
+const STACKS_NETWORK = NETWORK_NAME === 'mainnet' ? new StacksMainnet() : new StacksTestnet();
+const HIRO_API = (process.env.HIRO_API_BASE || (NETWORK_NAME === 'mainnet' ? 'https://api.mainnet.hiro.so' : 'https://api.testnet.hiro.so')).replace(/\/+$/, '');
 const STACKS_API_KEY = process.env.STACKS_API_KEY || process.env.HIRO_API_KEY || '';
 
 const KEYS_CSV = process.env.FRIEND_KEYS_CSV || path.join(process.cwd(), 'private', 'scripts', 'divine-keys.csv');
@@ -122,15 +125,10 @@ async function fetchAccount(address: string): Promise<{ ustx: bigint; nonce: big
   };
 }
 
-async function broadcast(bytes: Uint8Array): Promise<string> {
-  const res = await fetch(`${HIRO_API}/v2/transactions`, {
-    method: 'POST',
-    headers: apiHeaders({ 'Content-Type': 'application/octet-stream' }),
-    body: Buffer.from(bytes),
-  });
-  const text = await res.text();
-  if (!res.ok) throw new Error(`broadcast ${res.status}: ${text.slice(0, 200)}`);
-  return text.trim().replace(/^"|"$/g, '');
+async function broadcast(tx: any): Promise<string> {
+  const result = await broadcastTransaction(tx, STACKS_NETWORK);
+  if (!result.txid) throw new Error('No txid in broadcast result');
+  return result.txid;
 }
 
 async function loadWallets(): Promise<Wallet[]> {
@@ -140,7 +138,7 @@ async function loadWallets(): Promise<Wallet[]> {
   for (const line of lines) {
     const [idxRaw, address, privateKey] = line.split(',').map((s) => s.trim());
     if (!address || !privateKey) continue;
-    const derived = getAddressFromPrivateKey(privateKey, NETWORK);
+    const derived = getAddressFromPrivateKey(privateKey, STACKS_NETWORK.version);
     if (derived !== address) {
       throw new Error(`wallet ${idxRaw} address mismatch: derived=${derived} csv=${address}`);
     }
@@ -348,18 +346,19 @@ async function main(): Promise<void> {
 
       try {
         const txid = await withNonce(w.address, async (nonce) => {
-          const tx: StacksTransactionWire = await makeContractCall({
+          const tx = await makeContractCall({
             contractAddress: DEPLOYER,
             contractName: action.contractName,
             functionName: action.functionName,
             functionArgs: action.args,
             senderKey: w.privateKey,
-            network: NETWORK,
+            network: STACKS_NETWORK,
             fee,
             nonce,
-            postConditionMode: 'allow',
+            postConditionMode: PostConditionMode.Allow,
+            anchorMode: AnchorMode.Any,
           });
-          return await broadcast(serializeTransactionBytes(tx));
+          return await broadcast(tx);
         });
 
         const now = Date.now();

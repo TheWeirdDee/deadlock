@@ -10,11 +10,11 @@
     "divine": "npx tsx private/scripts/divine.ts"
   },
   "dependencies": {
-    "@stacks/auth": "7.4.0",
-    "@stacks/connect": "8.2.6",
-    "@stacks/connect-react": "23.1.6",
-    "@stacks/network": "7.4.0",
-    "@stacks/transactions": "7.4.0",
+    "@stacks/auth": "latest",
+    "@stacks/connect": "latest",
+    "@stacks/connect-react": "latest",
+    "@stacks/network": "latest",
+    "@stacks/transactions": "latest",
     "framer-motion": "^11.0.0",
     "next": "14.2.0",
     "react": "^18",

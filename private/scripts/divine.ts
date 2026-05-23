@@ -29,6 +29,7 @@ import {
   trueCV,
   falseCV,
   noneCV,
+  someCV,
   stringUtf8CV,
   type ClarityValue,
   callReadOnlyFunction,
@@ -173,7 +174,7 @@ function ensureWalletState(s: State, idx: number): WalletState {
   return s.walletsState[idx];
 }
 
-type ActionKind = 'vote-yes' | 'vote-no' | 'create-vow' | 'submit-completion';
+type ActionKind = 'vote-yes' | 'vote-no' | 'create-vow' | 'submit-completion' | 'accept-rival-vow' | 'spectate';
 type Action = {
   kind: ActionKind;
   functionName: string;
@@ -192,7 +193,7 @@ function pickEligibleAction(
 
   if (now - selfState.lastVoteTs >= VOTE_COOLDOWN_MS) {
     if (maxVowId > 0) {
-      candidates.push('vote-yes', 'vote-no', 'submit-completion');
+      candidates.push('vote-yes', 'vote-no', 'submit-completion', 'accept-rival-vow', 'spectate');
     }
     candidates.push('create-vow');
   }
@@ -208,21 +209,43 @@ function pickEligibleAction(
       return { kind: 'vote-yes', functionName: 'vote-on-vow', args: [randomVowId, trueCV()], contractName };
     case 'vote-no':
       return { kind: 'vote-no', functionName: 'vote-on-vow', args: [randomVowId, falseCV()], contractName };
-    case 'create-vow':
+    case 'create-vow': {
+      const vowType = randInt(1, 3);
+      const otherWallet = pick(pool.filter(w => w.address !== self.address));
+      const rivalVal = vowType === 2 ? someCV(standardPrincipalCV(otherWallet.address)) : noneCV();
+      const causeVal = vowType === 3 ? someCV(standardPrincipalCV(otherWallet.address)) : noneCV();
       return { 
         kind: 'create-vow', 
         functionName: 'create-vow', 
         args: [
           stringUtf8CV("Bot Vow"), 
           stringUtf8CV("Farming description"), 
-          uintCV(1), 
-          uintCV(1), 
+          uintCV(vowType), 
+          uintCV(2000), // 0.002 STX
           uintCV(9999999), 
-          noneCV(), 
-          noneCV()
+          rivalVal, 
+          causeVal
         ], 
         contractName 
       };
+    }
+    case 'accept-rival-vow':
+      return {
+        kind: 'accept-rival-vow',
+        functionName: 'accept-rival-vow',
+        args: [randomVowId, uintCV(2000)], // 0.002 STX matching stake
+        contractName
+      };
+    case 'spectate': {
+      const prediction = Math.random() > 0.5;
+      const betAmount = randInt(100, 1000); // random bet amount (minimum 100 micro-STX)
+      return {
+        kind: 'spectate',
+        functionName: 'spectate',
+        args: [randomVowId, prediction ? trueCV() : falseCV(), uintCV(betAmount)],
+        contractName
+      };
+    }
     case 'submit-completion':
       return { kind: 'submit-completion', functionName: 'submit-completion', args: [randomVowId, stringUtf8CV("https://proof.com")], contractName };
   }

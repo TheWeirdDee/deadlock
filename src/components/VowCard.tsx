@@ -45,15 +45,21 @@ export function VowCard({ vow, index }: { vow: any; index: number }) {
           <span className="text-xs">BLOCK #{vow['deadline-block']}</span>
         </div>
 
-        <Link href={`/vow/${vow.id}`} className="w-full">
-          <button className={`w-full py-2 font-bold uppercase text-xs transition-all ${
-            vow.vowType === VOW_TYPES.BURN ? 'bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white' :
-            vow.vowType === VOW_TYPES.RIVAL ? 'bg-blue-400/10 text-blue-400 hover:bg-blue-400 hover:text-white' : 
-            'bg-green-400/10 text-green-400 hover:bg-green-400 hover:text-white'
-          }`}>
-            VIEW CHALLENGE
+        {vow.status === 'PENDING' ? (
+          <button disabled className="w-full py-2 font-bold uppercase text-xs transition-all bg-yellow-500/10 text-yellow-500 border border-yellow-500/30 animate-pulse cursor-not-allowed">
+            PENDING CONFIRMATION...
           </button>
-        </Link>
+        ) : (
+          <Link href={`/vow/${vow.id}`} className="w-full">
+            <button className={`w-full py-2 font-bold uppercase text-xs transition-all ${
+              vow.vowType === VOW_TYPES.BURN ? 'bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white' :
+              vow.vowType === VOW_TYPES.RIVAL ? 'bg-blue-400/10 text-blue-400 hover:bg-blue-400 hover:text-white' : 
+              'bg-green-400/10 text-green-400 hover:bg-green-400 hover:text-white'
+            }`}>
+              VIEW CHALLENGE
+            </button>
+          </Link>
+        )}
       </div>
     </motion.div>
   );

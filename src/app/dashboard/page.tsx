@@ -36,6 +36,12 @@ export default function DashboardPage() {
     fetchVows();
   }, [router]);
 
+  useEffect(() => {
+    const handleUpdate = () => fetchVows();
+    window.addEventListener('vows_updated', handleUpdate);
+    return () => window.removeEventListener('vows_updated', handleUpdate);
+  }, []);
+
   async function fetchVows() {
     try {
       const count = await getVowCount();
@@ -45,7 +51,29 @@ export default function DashboardPage() {
         const vow = await getVow(i);
         if (vow) fetchedVows.push({ ...vow, id: i });
       }
-      setVows(fetchedVows);
+      
+      let pendingVows = [];
+      try {
+        const stored = localStorage.getItem('pending_vows');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          // Only keep pending vows that don't match exactly with a fetched confirmed vow
+          pendingVows = parsed.filter((pending: any) => {
+            return !fetchedVows.some(
+              confirmed => confirmed.title === pending.title && 
+                           confirmed.description === pending.description
+            );
+          });
+          // Update local storage to remove confirmed ones
+          if (pendingVows.length !== parsed.length) {
+            localStorage.setItem('pending_vows', JSON.stringify(pendingVows));
+          }
+        }
+      } catch (err) {
+        console.error("Error reading pending vows", err);
+      }
+      
+      setVows([...pendingVows, ...fetchedVows]);
     } catch (e) {
       console.error(e);
     } finally {

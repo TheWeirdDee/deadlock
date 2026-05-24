@@ -52,6 +52,34 @@ export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
       postConditionMode: PostConditionMode.Allow,
       onFinish: (data) => {
         console.log('Transaction sent:', data);
+        
+        // Save pending vow to local storage
+        try {
+          const appConfig = new (require('@stacks/connect').AppConfig)(['store_write', 'publish_data']);
+          const userSession = new (require('@stacks/connect').UserSession)({ appConfig });
+          const userData = userSession.isUserSignedIn() ? userSession.loadUserData() : null;
+          const userAddress = userData?.profile?.stxAddress?.mainnet || userData?.profile?.stxAddress?.testnet || '';
+          
+          const pendingVow = {
+            id: `pending-${data.txId}`,
+            title,
+            description,
+            vowType: type,
+            'stake-amount': stakeAmount.toString(),
+            'deadline-block': deadlineBlock,
+            creator: userAddress,
+            status: 'PENDING'
+          };
+          
+          const existingPending = JSON.parse(localStorage.getItem('pending_vows') || '[]');
+          localStorage.setItem('pending_vows', JSON.stringify([pendingVow, ...existingPending]));
+          
+          // Dispatch a custom event to force the feed to refresh
+          window.dispatchEvent(new Event('vows_updated'));
+        } catch(e) {
+          console.error("Failed to save pending vow", e);
+        }
+        
         onClose();
       },
       onCancel: () => {

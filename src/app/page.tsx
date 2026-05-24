@@ -133,11 +133,14 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Hero Redesign based on TIXTA Layout */}
-      <section className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-12 items-center mb-24 mt-8 relative z-10">
-        
-        {/* Left Column - Content */}
-        <div className="lg:col-span-7 flex flex-col items-start text-left">
+      {/* Conditional Rendering for Dashboard vs Landing */}
+      {!userData ? (
+        <>
+          {/* Hero Redesign based on TIXTA Layout */}
+          <section className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-12 items-center mb-4 mt-8 relative z-10">
+            
+            {/* Left Column - Content */}
+            <div className="lg:col-span-7 flex flex-col items-start text-left">
           
           {/* Badge */}
           <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-white/10 rounded-full mb-6 shadow-sm">
@@ -204,7 +207,7 @@ export default function Home() {
         </div>
       </section>
       {/* Wave Divider & Stats/Waitlist Section */}
-      <div className="w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] -mt-12 mb-20 z-20">
+      <div className="w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] -mt-24 mb-20 z-20">
         
         {/* Wave SVG */}
         <svg viewBox="0 0 1440 120" fill="none" className="w-full h-auto block translate-y-[1px]" xmlns="http://www.w3.org/2000/svg">
@@ -279,12 +282,16 @@ export default function Home() {
           </div>
         </div>
         
-      </div>
+          </div>
+        </>
+      ) : (
+        <Dashboard userData={userData} vows={vows} setIsModalOpen={setIsModalOpen} />
+      )}
 
       {/* Vows Feed */}
       <section id="feed" className="w-full max-w-6xl">
         <div className="flex justify-between items-end mb-8 border-b border-white/10 pb-4">
-          <h3 className="text-3xl font-bold">LATEST CHALLENGES</h3>
+          <h3 className="text-3xl font-bold">{userData ? "GLOBAL CHALLENGES" : "LATEST CHALLENGES"}</h3>
           <span className="text-xs opacity-40">AUTO-REFRESHING ON-CHAIN</span>
         </div>
 
@@ -351,7 +358,7 @@ function VowCard({ vow, index }: { vow: any; index: number }) {
 
       <h4 className="text-2xl font-bold mb-2 uppercase leading-tight truncate">{vow.title}</h4>
       <p className="text-sm opacity-60 mb-6 flex-grow line-clamp-3 leading-relaxed">
-        {vow.description}
+        {vow.description === 'Farming description' ? 'A public vow has been made. The stakes are high, and the world is watching.' : vow.description}
       </p>
 
       <div className="mt-auto pt-6 border-t border-white/5 space-y-4">
@@ -376,5 +383,52 @@ function VowCard({ vow, index }: { vow: any; index: number }) {
         </Link>
       </div>
     </motion.div>
+  );
+}
+
+function Dashboard({ userData, vows, setIsModalOpen }: { userData: any; vows: any[]; setIsModalOpen: (val: boolean) => void }) {
+  const userAddress = userData?.profile?.stxAddress?.mainnet || userData?.profile?.stxAddress?.testnet;
+  const myVows = vows.filter(v => v.creator === userAddress);
+
+  return (
+    <section className="w-full max-w-6xl mt-8 mb-24 z-10 relative">
+      <div className="glass-card p-8 flex flex-col md:flex-row justify-between items-start md:items-center mb-12 border-t-2 border-purple-500">
+        <div>
+          <h2 className="text-3xl font-bold font-bebas mb-2">WELCOME BACK.</h2>
+          <p className="text-sm opacity-60 font-mono tracking-wider text-purple-300">
+            {userAddress}
+          </p>
+        </div>
+        <button 
+          onClick={() => setIsModalOpen(true)}
+          className="mt-6 md:mt-0 px-8 py-3.5 bg-white text-black font-bold uppercase rounded-full tracking-widest text-sm hover:bg-gray-200 transition-all active:scale-95 shadow-[0_0_30px_rgba(255,255,255,0.2)] font-bebas flex items-center gap-2"
+        >
+          CREATE NEW VOW →
+        </button>
+      </div>
+
+      <div className="mb-16">
+        <h3 className="text-2xl font-bold mb-6 border-b border-white/10 pb-4 text-white">YOUR ACTIVE VOWS</h3>
+        {myVows.length === 0 ? (
+          <div className="text-center py-12 border border-dashed border-white/20 rounded-xl bg-white/5 flex flex-col items-center">
+            <p className="text-gray-400 mb-4 tracking-wider">You don't have any active vows yet.</p>
+            <button 
+              onClick={() => setIsModalOpen(true)} 
+              className="text-sm font-bold text-white hover:text-purple-400 uppercase tracking-widest border border-white/20 px-6 py-2 rounded-full transition-colors"
+            >
+              Create your first vow
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <AnimatePresence>
+              {myVows.map((vow, idx) => (
+                <VowCard key={vow.id} vow={vow} index={idx} />
+              ))}
+            </AnimatePresence>
+          </div>
+        )}
+      </div>
+    </section>
   );
 }

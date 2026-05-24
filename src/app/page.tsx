@@ -63,7 +63,7 @@ export default function Home() {
   async function fetchVows() {
     try {
       const count = await getVowCount();
-      const fetchedVows = [];
+      const fetchedVows: any[] = [];
       // Fetch last 10 vows for now
       for (let i = count; i > Math.max(0, count - 10); i--) {
         const vow = await getVow(i);

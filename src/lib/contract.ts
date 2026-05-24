@@ -16,7 +16,7 @@ const network = process.env.NEXT_PUBLIC_NETWORK === 'mainnet'
   : new StacksTestnet();
 
 const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS!;
-const contractName = (process.env.NEXT_PUBLIC_CONTRACT_NAME || 'deadlock').replace(/-clar|\.clar$/g, '');
+const contractName = process.env.NEXT_PUBLIC_CONTRACT_NAME || 'deadlock-clar';
 
 export const getNetwork = () => network;
 

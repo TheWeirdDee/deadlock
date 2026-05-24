@@ -11,6 +11,8 @@ import Link from 'next/link';
 import { getVowCount, getVow, contractDetails } from '@/lib/contract';
 import { VOW_TYPES, VOW_STATUS } from '@/lib/types';
 import { CreateVowModal } from '@/components/CreateVowModal';
+import { Header } from '@/components/Header';
+import { VowCard } from '@/components/VowCard';
 
 export default function Home() {
   const { doOpenAuth } = useConnect();
@@ -88,56 +90,10 @@ export default function Home() {
       </div>
 
       {/* Header */}
-      <header className="w-full max-w-6xl flex justify-between items-center mb-16 relative z-30">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-white rotate-45 flex items-center justify-center transition-transform duration-500 hover:rotate-[225deg]">
-            <div className="w-4 h-4 bg-black -rotate-45"></div>
-          </div>
-          <h1 className="text-3xl font-bold tracking-tighter font-bebas text-white">DEADLOCK</h1>
-        </div>
-        
-        {/* Navigation Links - Centered */}
-        <nav className="hidden md:flex items-center gap-8 text-xs font-bold tracking-widest text-gray-400">
-          <a href="#feed" className="hover:text-white transition-colors relative py-1 group">
-            VOWS FEED
-            <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-white transition-all duration-300 group-hover:w-full"></span>
-          </a>
-          <a href="#analytics" className="hover:text-white transition-colors relative py-1 group">
-            ANALYTICS
-            <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-white transition-all duration-300 group-hover:w-full"></span>
-          </a>
-          <a href="https://github.com/TheWeirdDee/deadlock" target="_blank" className="hover:text-white transition-colors relative py-1 group">
-            DEVELOPER DOCS
-            <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-white transition-all duration-300 group-hover:w-full"></span>
-          </a>
-        </nav>
-        
-        <div className="flex gap-4 items-center">
-          {userData ? (
-            <div className="flex gap-4 items-center">
-              <span className="text-xs bg-white/5 border border-white/10 rounded-full px-3 py-1 text-gray-400 hidden md:block">
-                {userData.profile.stxAddress.mainnet.slice(0, 6)}...{userData.profile.stxAddress.mainnet.slice(-4)}
-              </span>
-              <button onClick={handleLogout} className="text-xs font-bold tracking-widest uppercase hover:text-white transition-colors">
-                Logout
-              </button>
-            </div>
-          ) : (
-            <button 
-              onClick={handleLogin} 
-              className="text-xs font-bold tracking-widest uppercase px-6 py-2.5 bg-white text-black rounded-full hover:bg-gray-200 transition-all active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.15)]"
-            >
-              Connect Wallet
-            </button>
-          )}
-        </div>
-      </header>
+      <Header userData={userData} handleLogin={handleLogin} handleLogout={handleLogout} />
 
-      {/* Conditional Rendering for Dashboard vs Landing */}
-      {!userData ? (
-        <>
-          {/* Hero Redesign based on TIXTA Layout */}
-          <section className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-12 items-center mb-4 mt-8 relative z-10">
+      {/* Hero Redesign based on TIXTA Layout */}
+      <section className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-12 items-center mb-4 mt-8 relative z-10">
             
             {/* Left Column - Content */}
             <div className="lg:col-span-7 flex flex-col items-start text-left">
@@ -281,12 +237,7 @@ export default function Home() {
             
           </div>
         </div>
-        
-          </div>
-        </>
-      ) : (
-        <Dashboard userData={userData} vows={vows} setIsModalOpen={setIsModalOpen} />
-      )}
+      </div>
 
       {/* Vows Feed */}
       <section id="feed" className="w-full max-w-6xl">
@@ -326,109 +277,5 @@ export default function Home() {
         </div>
       </footer>
     </main>
-  );
-}
-
-function VowCard({ vow, index }: { vow: any; index: number }) {
-  const typeClass = 
-    vow.vowType === VOW_TYPES.BURN ? 'glow-burn' :
-    vow.vowType === VOW_TYPES.RIVAL ? 'glow-rival' : 'glow-cause';
-  
-  const typeLabel = 
-    vow.vowType === VOW_TYPES.BURN ? 'BURN' :
-    vow.vowType === VOW_TYPES.RIVAL ? 'RIVAL' : 'CAUSE';
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.5, delay: index * 0.1 }}
-      whileHover={{ y: -5 }}
-      className={`glass-card p-6 flex flex-col h-full border-t-2 ${typeClass}`}
-    >
-      <div className="flex justify-between items-start mb-4">
-        <span className={`status-badge ${
-          vow.vowType === VOW_TYPES.BURN ? 'border-red-500 text-red-500' :
-          vow.vowType === VOW_TYPES.RIVAL ? 'border-blue-400 text-blue-400' : 'border-green-400 text-green-400'
-        }`}>
-          {typeLabel}
-        </span>
-        <span className="text-[10px] opacity-40">VOW #{vow.id}</span>
-      </div>
-
-      <h4 className="text-2xl font-bold mb-2 uppercase leading-tight truncate">{vow.title}</h4>
-      <p className="text-sm opacity-60 mb-6 flex-grow line-clamp-3 leading-relaxed">
-        {vow.description === 'Farming description' ? 'A public vow has been made. The stakes are high, and the world is watching.' : vow.description}
-      </p>
-
-      <div className="mt-auto pt-6 border-t border-white/5 space-y-4">
-        <div className="flex justify-between items-center">
-          <span className="text-[10px] opacity-40 uppercase">STAKE</span>
-          <span className="font-bold text-xl">{Number(vow['stake-amount']) / 1000000} STX</span>
-        </div>
-        
-        <div className="flex justify-between items-center">
-          <span className="text-[10px] opacity-40 uppercase">DEADLINE</span>
-          <span className="text-xs">BLOCK #{vow['deadline-block']}</span>
-        </div>
-
-        <Link href={`/vow/${vow.id}`} className="w-full">
-          <button className={`w-full py-2 font-bold uppercase text-xs transition-all ${
-            vow.vowType === VOW_TYPES.BURN ? 'bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white' :
-            vow.vowType === VOW_TYPES.RIVAL ? 'bg-blue-400/10 text-blue-400 hover:bg-blue-400 hover:text-white' : 
-            'bg-green-400/10 text-green-400 hover:bg-green-400 hover:text-white'
-          }`}>
-            VIEW CHALLENGE
-          </button>
-        </Link>
-      </div>
-    </motion.div>
-  );
-}
-
-function Dashboard({ userData, vows, setIsModalOpen }: { userData: any; vows: any[]; setIsModalOpen: (val: boolean) => void }) {
-  const userAddress = userData?.profile?.stxAddress?.mainnet || userData?.profile?.stxAddress?.testnet;
-  const myVows = vows.filter(v => v.creator === userAddress);
-
-  return (
-    <section className="w-full max-w-6xl mt-8 mb-24 z-10 relative">
-      <div className="glass-card p-8 flex flex-col md:flex-row justify-between items-start md:items-center mb-12 border-t-2 border-purple-500">
-        <div>
-          <h2 className="text-3xl font-bold font-bebas mb-2">WELCOME BACK.</h2>
-          <p className="text-sm opacity-60 font-mono tracking-wider text-purple-300">
-            {userAddress}
-          </p>
-        </div>
-        <button 
-          onClick={() => setIsModalOpen(true)}
-          className="mt-6 md:mt-0 px-8 py-3.5 bg-white text-black font-bold uppercase rounded-full tracking-widest text-sm hover:bg-gray-200 transition-all active:scale-95 shadow-[0_0_30px_rgba(255,255,255,0.2)] font-bebas flex items-center gap-2"
-        >
-          CREATE NEW VOW →
-        </button>
-      </div>
-
-      <div className="mb-16">
-        <h3 className="text-2xl font-bold mb-6 border-b border-white/10 pb-4 text-white">YOUR ACTIVE VOWS</h3>
-        {myVows.length === 0 ? (
-          <div className="text-center py-12 border border-dashed border-white/20 rounded-xl bg-white/5 flex flex-col items-center">
-            <p className="text-gray-400 mb-4 tracking-wider">You don't have any active vows yet.</p>
-            <button 
-              onClick={() => setIsModalOpen(true)} 
-              className="text-sm font-bold text-white hover:text-purple-400 uppercase tracking-widest border border-white/20 px-6 py-2 rounded-full transition-colors"
-            >
-              Create your first vow
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <AnimatePresence>
-              {myVows.map((vow, idx) => (
-                <VowCard key={vow.id} vow={vow} index={idx} />
-              ))}
-            </AnimatePresence>
-          </div>
-        )}
-      </div>
-    </section>
   );
 }

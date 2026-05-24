@@ -20,18 +20,18 @@ export function Header({ userData, handleLogin, handleLogout }: HeaderProps) {
       
       {/* Navigation Links - Centered */}
       <nav className="hidden md:flex items-center gap-8 text-xs font-bold tracking-widest text-gray-400">
-        <a href="/#feed" className="hover:text-white transition-colors relative py-1 group">
+        <Link href="/#feed" className="hover:text-white transition-colors relative py-1 group">
           VOWS FEED
           <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-white transition-all duration-300 group-hover:w-full"></span>
-        </a>
-        <a href="/#analytics" className="hover:text-white transition-colors relative py-1 group">
+        </Link>
+        <Link href="/analytics" className="hover:text-white transition-colors relative py-1 group">
           ANALYTICS
           <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-white transition-all duration-300 group-hover:w-full"></span>
-        </a>
-        <a href="https://github.com/TheWeirdDee/deadlock" target="_blank" className="hover:text-white transition-colors relative py-1 group">
+        </Link>
+        <Link href="/docs" className="hover:text-white transition-colors relative py-1 group">
           DEVELOPER DOCS
           <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-white transition-all duration-300 group-hover:w-full"></span>
-        </a>
+        </Link>
       </nav>
       
       <div className="flex gap-4 items-center">

@@ -114,24 +114,55 @@ export default function DashboardPage() {
 
       <Header userData={userData} handleLogin={handleLogin} handleLogout={handleLogout} />
 
-      <section className="w-full max-w-6xl mt-8 mb-24 z-10 relative">
-        <div className="glass-card p-8 flex flex-col md:flex-row justify-between items-start md:items-center mb-12 border-t-2 border-purple-500">
+      <section className="w-full max-w-6xl mt-8 mb-24 z-10 relative space-y-16">
+        {/* Header Area */}
+        <div className="glass-card p-8 flex flex-col md:flex-row justify-between items-start md:items-center border-t-2 border-purple-500">
           <div>
             <h2 className="text-3xl font-bold font-bebas mb-2">WELCOME BACK.</h2>
-            <p className="text-sm opacity-60 font-mono tracking-wider text-purple-300">
+            <p className="text-sm opacity-60 font-mono tracking-wider text-purple-300 mb-6 md:mb-0">
               {userAddress}
             </p>
           </div>
-          <button 
-            onClick={() => setIsModalOpen(true)}
-            className="mt-6 md:mt-0 px-8 py-3.5 bg-white text-black font-bold uppercase rounded-full tracking-widest text-sm hover:bg-gray-200 transition-all active:scale-95 shadow-[0_0_30px_rgba(255,255,255,0.2)] font-bebas flex items-center gap-2"
-          >
-            CREATE NEW VOW →
-          </button>
+          <div className="flex gap-8 items-center">
+            <div className="text-right hidden md:block">
+              <p className="text-[10px] text-gray-500 uppercase tracking-widest">Win Rate</p>
+              <p className="text-xl font-bold font-bebas text-green-400">85%</p>
+            </div>
+            <div className="text-right hidden sm:block">
+              <p className="text-[10px] text-gray-500 uppercase tracking-widest">Total Staked</p>
+              <p className="text-xl font-bold font-bebas text-purple-400">{(myVows.reduce((acc, v) => acc + Number(v['stake-amount'] || 0), 0) / 1000000).toFixed(1)} STX</p>
+            </div>
+            <button 
+              onClick={() => setIsModalOpen(true)}
+              className="px-8 py-3.5 bg-white text-black font-bold uppercase rounded-full tracking-widest text-sm hover:bg-gray-200 transition-all active:scale-95 shadow-[0_0_30px_rgba(255,255,255,0.2)] font-bebas flex items-center gap-2"
+            >
+              CREATE VOW →
+            </button>
+          </div>
         </div>
 
-        <div className="mb-16">
-          <h3 className="text-2xl font-bold mb-6 border-b border-white/10 pb-4 text-white">YOUR ACTIVE VOWS</h3>
+        {/* Action Required Section (Mock Logic) */}
+        {myVows.length > 0 && (
+          <div>
+            <div className="flex items-center gap-3 mb-6 border-b border-red-500/30 pb-4">
+              <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+              <h3 className="text-2xl font-bold text-white uppercase tracking-widest font-bebas">ACTION REQUIRED</h3>
+            </div>
+            <div className="glass-card border border-red-500/20 p-6 flex flex-col md:flex-row justify-between items-center bg-red-950/10 gap-4">
+              <div>
+                <h4 className="font-bold text-lg">VOW #12 - SHIP FRONTEND</h4>
+                <p className="text-sm text-gray-400">Deadline has passed. Submit your proof of completion immediately to avoid slashing.</p>
+              </div>
+              <button className="px-6 py-2 bg-red-500 hover:bg-red-600 text-white font-bold uppercase rounded text-xs tracking-widest transition-colors flex-shrink-0">
+                SUBMIT PROOF
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Active Vows */}
+        <div>
+          <h3 className="text-2xl font-bold mb-6 border-b border-white/10 pb-4 text-white uppercase tracking-widest font-bebas">YOUR ACTIVE VOWS</h3>
           {myVows.length === 0 ? (
             <div className="text-center py-12 border border-dashed border-white/20 rounded-xl bg-white/5 flex flex-col items-center">
               <p className="text-gray-400 mb-4 tracking-wider">You don't have any active vows yet.</p>
@@ -151,6 +182,37 @@ export default function DashboardPage() {
               </AnimatePresence>
             </div>
           )}
+        </div>
+
+        {/* Spectator Bets Section */}
+        <div>
+          <h3 className="text-2xl font-bold mb-6 border-b border-white/10 pb-4 text-white uppercase tracking-widest font-bebas">YOUR SPECTATOR BETS</h3>
+          <div className="glass-card p-6">
+             <table className="w-full text-left border-collapse min-w-[500px]">
+              <thead>
+                <tr className="border-b border-white/10 text-xs text-gray-500 uppercase tracking-widest">
+                  <th className="pb-4 font-normal">Vow Title</th>
+                  <th className="pb-4 font-normal">Staked</th>
+                  <th className="pb-4 font-normal">Prediction</th>
+                  <th className="pb-4 font-normal text-right">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                  <td className="py-4 font-bold text-sm">LAUNCH TESTNET</td>
+                  <td className="py-4 text-purple-400 font-bold">50 STX</td>
+                  <td className="py-4 text-green-400 text-xs tracking-widest">SUCCESS</td>
+                  <td className="py-4 text-right text-gray-500 text-xs">AWAITING DEADLINE</td>
+                </tr>
+                <tr className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                  <td className="py-4 font-bold text-sm">FIX SMART CONTRACT BUG</td>
+                  <td className="py-4 text-purple-400 font-bold">120 STX</td>
+                  <td className="py-4 text-red-400 text-xs tracking-widest">FAILURE</td>
+                  <td className="py-4 text-right text-gray-500 text-xs">AWAITING DEADLINE</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 

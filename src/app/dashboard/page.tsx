@@ -178,32 +178,49 @@ export default function DashboardPage() {
         {/* Spectator Bets Section */}
         <div>
           <h3 className="text-2xl font-bold mb-6 border-b border-white/10 pb-4 text-white uppercase tracking-widest font-bebas">YOUR SPECTATOR BETS</h3>
-          <div className="glass-card p-6">
-             <table className="w-full text-left border-collapse min-w-[500px]">
-              <thead>
-                <tr className="border-b border-white/10 text-xs text-gray-500 uppercase tracking-widest">
-                  <th className="pb-4 font-normal">Vow Title</th>
-                  <th className="pb-4 font-normal">Staked</th>
-                  <th className="pb-4 font-normal">Prediction</th>
-                  <th className="pb-4 font-normal text-right">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                  <td className="py-4 font-bold text-sm">LAUNCH TESTNET</td>
-                  <td className="py-4 text-purple-400 font-bold">50 STX</td>
-                  <td className="py-4 text-green-400 text-xs tracking-widest">SUCCESS</td>
-                  <td className="py-4 text-right text-gray-500 text-xs">AWAITING DEADLINE</td>
-                </tr>
-                <tr className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                  <td className="py-4 font-bold text-sm">FIX SMART CONTRACT BUG</td>
-                  <td className="py-4 text-purple-400 font-bold">120 STX</td>
-                  <td className="py-4 text-red-400 text-xs tracking-widest">FAILURE</td>
-                  <td className="py-4 text-right text-gray-500 text-xs">AWAITING DEADLINE</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+          {/* Note: In the future, this array should be populated from contract reads. For now, it's empty. */}
+          {(() => {
+            const spectatorBets: any[] = [];
+            
+            if (spectatorBets.length === 0) {
+              return (
+                <div className="text-center py-12 border border-dashed border-white/20 rounded-xl bg-white/5 flex flex-col items-center">
+                  <p className="text-gray-400 mb-4 tracking-wider">You haven't placed any spectator bets yet.</p>
+                  <button 
+                    onClick={() => router.push('/#feed')} 
+                    className="text-sm font-bold text-white hover:text-purple-400 uppercase tracking-widest border border-white/20 px-6 py-2 rounded-full transition-colors"
+                  >
+                    Browse Active Vows
+                  </button>
+                </div>
+              );
+            }
+
+            return (
+              <div className="glass-card p-6">
+                 <table className="w-full text-left border-collapse min-w-[500px]">
+                  <thead>
+                    <tr className="border-b border-white/10 text-xs text-gray-500 uppercase tracking-widest">
+                      <th className="pb-4 font-normal">Vow Title</th>
+                      <th className="pb-4 font-normal">Staked</th>
+                      <th className="pb-4 font-normal">Prediction</th>
+                      <th className="pb-4 font-normal text-right">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {spectatorBets.map((bet, idx) => (
+                      <tr key={idx} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                        <td className="py-4 font-bold text-sm">{bet.title}</td>
+                        <td className="py-4 text-purple-400 font-bold">{bet.amount} STX</td>
+                        <td className={`py-4 text-xs tracking-widest ${bet.prediction === 'SUCCESS' ? 'text-green-400' : 'text-red-400'}`}>{bet.prediction}</td>
+                        <td className="py-4 text-right text-gray-500 text-xs">{bet.status}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })()}
         </div>
       </section>
 

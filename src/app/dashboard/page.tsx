@@ -6,7 +6,7 @@ import { AppConfig, UserSession } from '@stacks/connect';
 import { AnimatePresence } from 'framer-motion';
 import { getVowCount, getVow } from '@/lib/contract';
 import { CreateVowModal } from '@/components/CreateVowModal';
-import { Header } from '@/components/Header';
+import { SidebarLayout } from '@/components/SidebarLayout';
 import { VowCard } from '@/components/VowCard';
 import { useRouter } from 'next/navigation';
 
@@ -92,12 +92,11 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <main className="flex min-h-screen flex-col items-center p-4 md:p-12 lg:p-24 relative overflow-hidden bg-black text-white">
-        <Header userData={userData} handleLogin={handleLogin} handleLogout={handleLogout} />
-        <div className="flex-grow flex items-center justify-center">
+      <SidebarLayout activePage="dashboard">
+        <div className="flex-grow flex items-center justify-center h-full min-h-[50vh]">
           <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
         </div>
-      </main>
+      </SidebarLayout>
     );
   }
 
@@ -105,16 +104,8 @@ export default function DashboardPage() {
   const myVows = vows.filter(v => v.creator === userAddress);
 
   return (
-    <main className="flex min-h-screen flex-col items-center p-4 md:p-12 lg:p-24 relative overflow-hidden bg-black text-white">
-      {/* Dynamic Network Nodes Overlay (Subtle for Dashboard) */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none opacity-20 mix-blend-screen">
-        <div className="absolute top-[20%] left-[10%] w-[400px] h-[400px] bg-purple-600/20 rounded-full blur-[150px] animate-pulse-slow"></div>
-        <div className="absolute bottom-[20%] right-[10%] w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[150px] animate-pulse-slow" style={{ animationDelay: '2s' }}></div>
-      </div>
-
-      <Header userData={userData} handleLogin={handleLogin} handleLogout={handleLogout} />
-
-      <section className="w-full max-w-6xl mt-8 mb-24 z-10 relative space-y-16">
+    <SidebarLayout activePage="dashboard">
+      <section className="w-full max-w-6xl mt-4 mb-24 z-10 relative space-y-16">
         {/* Header Area */}
         <div className="glass-card p-8 flex flex-col md:flex-row justify-between items-start md:items-center border-t-2 border-purple-500">
           <div>
@@ -217,6 +208,6 @@ export default function DashboardPage() {
       </section>
 
       <CreateVowModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
-    </main>
+    </SidebarLayout>
   );
 }

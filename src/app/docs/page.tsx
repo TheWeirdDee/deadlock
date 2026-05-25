@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useConnect } from '@stacks/connect-react';
 import { AppConfig, UserSession } from '@stacks/connect';
-import { Header } from '@/components/Header';
+import { SidebarLayout } from '@/components/SidebarLayout';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 
@@ -50,14 +50,8 @@ async function createVow() {
   `.trim();
 
   return (
-    <main className="flex min-h-screen flex-col items-center p-4 md:p-12 lg:p-24 relative overflow-hidden bg-black text-white">
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none opacity-20 mix-blend-screen">
-        <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-blue-600/20 rounded-full blur-[150px] animate-pulse-slow"></div>
-      </div>
-
-      <Header userData={userData} handleLogin={handleLogin} handleLogout={handleLogout} />
-
-      <section className="w-full max-w-6xl mt-8 mb-24 z-10 flex flex-col md:flex-row gap-12">
+    <SidebarLayout activePage="docs">
+      <section className="w-full max-w-6xl mt-4 mb-24 z-10 flex flex-col md:flex-row gap-12">
         {/* Sidebar Nav */}
         <aside className="w-full md:w-64 flex-shrink-0">
           <div className="glass-card p-6 sticky top-24">
@@ -165,6 +159,6 @@ async function createVow() {
           )}
         </div>
       </section>
-    </main>
+    </SidebarLayout>
   );
 }

@@ -87,3 +87,4 @@ next-env.d.ts
 # scripts
 private/
 scripts/
+state/

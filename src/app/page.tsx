@@ -281,13 +281,33 @@ export default function Home() {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <AnimatePresence>
-              {vows.map((vow, idx) => (
-                <VowCard key={vow.id} vow={vow} index={idx} />
-              ))}
-            </AnimatePresence>
-          </div>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <AnimatePresence>
+                {vows.slice(0, 9).map((vow, idx) => (
+                  <VowCard key={vow.id} vow={vow} index={idx} />
+                ))}
+              </AnimatePresence>
+            </div>
+            
+            <div className="mt-12 flex justify-center">
+              {!userData ? (
+                <button 
+                  onClick={handleLogin}
+                  className="px-8 py-4 bg-white/5 border border-white/10 hover:border-white/30 text-white font-bold uppercase rounded-full tracking-widest text-sm hover:bg-white/10 transition-all duration-300 font-bebas flex items-center gap-2"
+                >
+                  CONNECT WALLET TO VIEW MORE
+                </button>
+              ) : (
+                <Link 
+                  href="/feed"
+                  className="px-8 py-4 bg-white/5 border border-white/10 hover:border-purple-500/50 text-white font-bold uppercase rounded-full tracking-widest text-sm hover:bg-purple-500/10 transition-all duration-300 font-bebas flex items-center gap-2"
+                >
+                  VIEW ALL IN DASHBOARD →
+                </Link>
+              )}
+            </div>
+          </>
         )}
       </section>
 

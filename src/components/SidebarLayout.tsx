@@ -6,7 +6,7 @@ import { AppConfig, UserSession } from '@stacks/connect';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-export function SidebarLayout({ children, activePage }: { children: React.ReactNode, activePage: 'analytics' | 'dashboard' | 'docs' }) {
+export function SidebarLayout({ children, activePage }: { children: React.ReactNode, activePage: 'analytics' | 'dashboard' | 'docs' | 'feed' }) {
   const { doOpenAuth } = useConnect();
   const router = useRouter();
   const [userData, setUserData] = useState<any>(null);
@@ -57,7 +57,7 @@ export function SidebarLayout({ children, activePage }: { children: React.ReactN
                 </Link>
               </li>
               <li>
-                <Link href="/#feed" className="flex items-center px-2 py-2 hover:bg-white/5 rounded-md transition-colors hover:text-white">
+                <Link href="/feed" className={`flex items-center px-2 py-2 rounded-md transition-colors ${activePage === 'feed' ? 'bg-purple-500/20 text-purple-400' : 'hover:bg-white/5 hover:text-white'}`}>
                   Vows Feed
                 </Link>
               </li>

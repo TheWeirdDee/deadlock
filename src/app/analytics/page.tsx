@@ -195,6 +195,7 @@ export default function AnalyticsPage() {
                   <XAxis dataKey="name" stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={false} />
                   <YAxis stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={false} />
                   <Tooltip 
+                    cursor={{ fill: 'transparent' }}
                     contentStyle={{ backgroundColor: '#111', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} 
                     itemStyle={{ color: '#fff' }}
                   />

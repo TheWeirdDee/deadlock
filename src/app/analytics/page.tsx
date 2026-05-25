@@ -219,16 +219,18 @@ export default function AnalyticsPage() {
                       <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                   <Tooltip 
                     contentStyle={{ backgroundColor: '#111', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }} 
                   />
                   <Area 
-                    type="monotone" 
+                    type="linear" 
                     dataKey="value" 
                     stroke="#3b82f6" 
-                    strokeWidth={4} 
+                    strokeWidth={3} 
                     fillOpacity={1} 
                     fill="url(#colorValue)" 
+                    dot={{ r: 4, fill: '#000', stroke: '#3b82f6', strokeWidth: 2 }}
                     activeDot={{ r: 6, fill: '#3b82f6', stroke: '#fff', strokeWidth: 2 }} 
                   />
                 </AreaChart>

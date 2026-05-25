@@ -21,7 +21,7 @@ export function VowCard({ vow, index }: { vow: any; index: number }) {
     >
       <div className="flex justify-between items-start mb-4">
         <span className={`status-badge ${
-          vow.vowType === VOW_TYPES.BURN ? 'border-red-500 text-red-500' :
+          vow.vowType === VOW_TYPES.BURN ? 'border-purple-400 text-purple-400' :
           vow.vowType === VOW_TYPES.RIVAL ? 'border-blue-400 text-blue-400' : 'border-green-400 text-green-400'
         }`}>
           {typeLabel}
@@ -65,7 +65,7 @@ export function VowCard({ vow, index }: { vow: any; index: number }) {
         ) : (
           <Link href={`/vow/${vow.id}`} className="w-full">
             <button className={`w-full py-2 font-bold uppercase text-xs transition-all ${
-              vow.vowType === VOW_TYPES.BURN ? 'bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white' :
+              vow.vowType === VOW_TYPES.BURN ? 'bg-purple-400/10 text-purple-400 hover:bg-purple-400 hover:text-white' :
               vow.vowType === VOW_TYPES.RIVAL ? 'bg-blue-400/10 text-blue-400 hover:bg-blue-400 hover:text-white' : 
               'bg-green-400/10 text-green-400 hover:bg-green-400 hover:text-white'
             }`}>

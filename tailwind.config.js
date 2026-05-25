@@ -16,12 +16,12 @@ module.exports = {
         foreground: '#ffffff',
         'card-bg': '#111111',
         'card-border': '#222222',
-        burn: '#ff3333',
+        burn: '#c084fc',
         rival: '#33ccff',
         cause: '#33ff99',
       },
       boxShadow: {
-        'glow-burn': '0 0 20px rgba(255, 51, 51, 0.2)',
+        'glow-burn': '0 0 20px rgba(192, 132, 252, 0.2)',
         'glow-rival': '0 0 20px rgba(51, 204, 255, 0.2)',
         'glow-cause': '0 0 20px rgba(51, 255, 153, 0.2)',
       }

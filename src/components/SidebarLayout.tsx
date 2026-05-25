@@ -31,9 +31,8 @@ export function SidebarLayout({ children, activePage }: { children: React.ReactN
 
   if (!userData) {
     return (
-      <main className="flex min-h-screen flex-col items-center p-4 md:p-12 lg:p-24 relative overflow-hidden bg-black text-white font-space">
+      <main className="flex min-h-screen flex-col items-center px-4 pt-6 pb-4 md:px-12 md:pt-8 md:pb-12 lg:px-24 lg:pt-8 lg:pb-24 relative overflow-hidden bg-black text-white font-space">
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none opacity-20 mix-blend-screen">
-          <div className="absolute top-[10%] left-[20%] w-[500px] h-[500px] bg-purple-600/20 rounded-full blur-[120px] animate-pulse-slow"></div>
           <div className="absolute bottom-[10%] right-[20%] w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[150px] animate-pulse-slow" style={{ animationDelay: '2s' }}></div>
         </div>
         

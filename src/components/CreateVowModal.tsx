@@ -139,11 +139,12 @@ export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] uppercase opacity-40">Stake Amount (STX)</label>
+            <label className="text-[10px] uppercase opacity-40">Stake Amount (STX) - Min 0.002 STX</label>
             <input 
               required
               type="number"
               step="0.000001"
+              min="0.002"
               value={amount}
               onChange={e => setAmount(e.target.value)}
               className="w-full bg-white/5 border border-white/10 p-3 outline-none focus:border-white transition-colors"

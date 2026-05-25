@@ -51,42 +51,42 @@ async function createVow() {
 
   return (
     <SidebarLayout activePage="docs">
-      <section className="w-full max-w-6xl mt-4 mb-24 z-10 flex flex-col md:flex-row gap-12">
-        {/* Sidebar Nav */}
-        <aside className="w-full md:w-64 flex-shrink-0">
-          <div className="glass-card p-6 sticky top-8">
-            <h3 className="font-bebas text-xl mb-6 tracking-widest text-purple-400">DEVELOPER DOCS</h3>
-            <ul className="space-y-4 font-bold text-sm tracking-widest text-gray-400">
+      <section className="w-full max-w-6xl mt-4 mb-24 z-10 flex flex-col gap-8">
+        {/* Top Nav */}
+        <nav className="w-full">
+          <div className="glass-card p-4 md:p-6 sticky top-4 z-20 flex flex-col md:flex-row justify-between items-center gap-4">
+            <h3 className="font-bebas text-2xl tracking-widest text-purple-400 mb-0">DEVELOPER DOCS</h3>
+            <ul className="flex flex-wrap justify-center md:justify-end gap-2 font-bold text-xs md:text-sm tracking-widest text-gray-400">
               <li>
                 <button 
                   onClick={() => setActiveTab('overview')}
-                  className={`hover:text-white transition-colors uppercase w-full text-left ${activeTab === 'overview' ? 'text-white border-l-2 border-purple-500 pl-3' : 'pl-3 border-l-2 border-transparent'}`}
+                  className={`hover:text-white transition-colors uppercase px-4 py-2 rounded-full ${activeTab === 'overview' ? 'text-white bg-white/10' : ''}`}
                 >
-                  Protocol Overview
+                  Overview
                 </button>
               </li>
               <li>
                 <button 
                   onClick={() => setActiveTab('contracts')}
-                  className={`hover:text-white transition-colors uppercase w-full text-left ${activeTab === 'contracts' ? 'text-white border-l-2 border-purple-500 pl-3' : 'pl-3 border-l-2 border-transparent'}`}
+                  className={`hover:text-white transition-colors uppercase px-4 py-2 rounded-full ${activeTab === 'contracts' ? 'text-white bg-white/10' : ''}`}
                 >
-                  Smart Contracts
+                  Contracts
                 </button>
               </li>
               <li>
                 <button 
                   onClick={() => setActiveTab('integration')}
-                  className={`hover:text-white transition-colors uppercase w-full text-left ${activeTab === 'integration' ? 'text-white border-l-2 border-purple-500 pl-3' : 'pl-3 border-l-2 border-transparent'}`}
+                  className={`hover:text-white transition-colors uppercase px-4 py-2 rounded-full ${activeTab === 'integration' ? 'text-white bg-white/10' : ''}`}
                 >
-                  React Integration
+                  Integration
                 </button>
               </li>
             </ul>
           </div>
-        </aside>
+        </nav>
 
         {/* Content Area */}
-        <div className="flex-grow">
+        <div className="w-full">
           {activeTab === 'overview' && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
               <div>

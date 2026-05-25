@@ -54,7 +54,7 @@ async function createVow() {
       <section className="w-full max-w-6xl mt-4 mb-24 z-10 flex flex-col md:flex-row gap-12">
         {/* Sidebar Nav */}
         <aside className="w-full md:w-64 flex-shrink-0">
-          <div className="glass-card p-6 sticky top-24">
+          <div className="glass-card p-6 sticky top-8">
             <h3 className="font-bebas text-xl mb-6 tracking-widest text-purple-400">DEVELOPER DOCS</h3>
             <ul className="space-y-4 font-bold text-sm tracking-widest text-gray-400">
               <li>
@@ -117,20 +117,20 @@ async function createVow() {
                 The Deadlock protocol is powered by the <code className="bg-white/10 px-2 py-1 rounded">deadlock-clar</code> smart contract on Stacks mainnet.
               </p>
 
-              <div className="glass-card p-8 border-t-2 border-blue-500 mb-6">
-                <h3 className="text-2xl font-bebas mb-2 text-blue-400">create-vow</h3>
+              <div className="glass-card p-8 border-t-2 border-purple-500 mb-6">
+                <h3 className="text-2xl font-bebas mb-2 text-purple-400">create-vow</h3>
                 <p className="text-sm text-gray-400 mb-4 font-mono">Parameters: title (string-utf8), description (string-utf8), stake-amount (uint), deadline-block (uint)</p>
                 <p className="text-gray-300">Creates a new vow and locks the specified STX amount in the contract escrow. The deadline is specified in absolute Stacks block height.</p>
               </div>
 
-              <div className="glass-card p-8 border-t-2 border-pink-500 mb-6">
-                <h3 className="text-2xl font-bebas mb-2 text-pink-400">spectate</h3>
+              <div className="glass-card p-8 border-t-2 border-purple-400 mb-6">
+                <h3 className="text-2xl font-bebas mb-2 text-purple-300">spectate</h3>
                 <p className="text-sm text-gray-400 mb-4 font-mono">Parameters: vow-id (uint), spectate-amount (uint)</p>
                 <p className="text-gray-300">Allows a user to place a bet on an existing vow. The staked amount is pooled and distributed to correct predictors upon vow resolution.</p>
               </div>
               
-              <div className="glass-card p-8 border-t-2 border-green-500">
-                <h3 className="text-2xl font-bebas mb-2 text-green-400">finalize-challenged-vow</h3>
+              <div className="glass-card p-8 border-t-2 border-white/20">
+                <h3 className="text-2xl font-bebas mb-2 text-white">finalize-challenged-vow</h3>
                 <p className="text-sm text-gray-400 mb-4 font-mono">Parameters: vow-id (uint)</p>
                 <p className="text-gray-300">Resolves a vow. If the deadline has passed without proof of completion, this triggers the penalty (burn or transfer to rival/spectators).</p>
               </div>

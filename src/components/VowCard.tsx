@@ -3,10 +3,6 @@ import Link from 'next/link';
 import { VOW_TYPES } from '@/lib/types';
 
 export function VowCard({ vow, index }: { vow: any; index: number }) {
-  const typeClass = 
-    vow.vowType === VOW_TYPES.BURN ? 'glow-burn' :
-    vow.vowType === VOW_TYPES.RIVAL ? 'glow-rival' : 'glow-cause';
-  
   const typeLabel = 
     vow.vowType === VOW_TYPES.BURN ? 'BURN' :
     vow.vowType === VOW_TYPES.RIVAL ? 'RIVAL' : 'CAUSE';
@@ -17,7 +13,7 @@ export function VowCard({ vow, index }: { vow: any; index: number }) {
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.5, delay: index * 0.1 }}
       whileHover={{ y: -5 }}
-      className={`glass-card p-6 flex flex-col h-full border-t-2 ${typeClass}`}
+      className={`glass-card p-6 flex flex-col h-full border-t-2 border-white/10`}
     >
       <div className="flex justify-between items-start mb-4">
         <span className={`status-badge ${

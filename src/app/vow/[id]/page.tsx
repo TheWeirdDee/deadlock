@@ -1,4 +1,6 @@
-'use client';
+ 'use client';
+
+// Docs: Vow detail page notes (annotation)
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';

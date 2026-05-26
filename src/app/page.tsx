@@ -14,6 +14,10 @@ import { CreateVowModal } from '@/components/CreateVowModal';
 import { Header } from '@/components/Header';
 import { VowCard } from '@/components/VowCard';
 
+/**
+ * Home component representing the landing page. It manages general dApp info,
+ * waitlists, stats dashboards, and lists the latest commitments in a feed.
+ */
 export default function Home() {
   const { doOpenAuth } = useConnect();
   const [userData, setUserData] = useState<any>(null);

@@ -38,11 +38,22 @@ export default function FeedPage() {
     try {
       setLoading(true);
       const count = await getVowCount();
+      console.log('[feed] Vow count:', count);
       const fetchedVows: any[] = [];
       // Fetch up to 50 vows for the full feed
-      for (let i = count; i > Math.max(0, count - 50); i--) {
-        const vow = await getVow(i);
-        if (vow) fetchedVows.push({ ...vow, id: i });
+      for (let i = count - 1; i >= Math.max(0, count - 50); i--) {
+        console.log('[feed] Fetching vow id', i);
+        try {
+          const vow = await getVow(i);
+          if (vow) {
+            console.log('[feed] Vow data', vow);
+            fetchedVows.push({ ...vow, id: i });
+          }
+        } catch (err) {
+          console.error('[feed] Error fetching vow', i, err);
+        }
+        // Small delay to respect rate limits
+        await new Promise(r => setTimeout(r, 200));
       }
       
       let pendingVows = [];

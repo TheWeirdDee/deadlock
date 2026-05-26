@@ -5,6 +5,8 @@ import { AppConfig, UserSession, showConnect } from '@stacks/connect';
 import { Connect } from '@stacks/connect-react';
 import { useState, useEffect } from 'react';
 
+// Docs: Providers wrapper (auth/connect) — small annotation
+
 /**
  * Providers wraps the children components with the Stacks auth Connect context
  * and handles client hydration mounting variables.

@@ -1,3 +1,4 @@
+;; ---- DEPLOYMENT CONSTANTS ----
 (define-constant CONTRACT-OWNER tx-sender)
 (define-constant BURN-ADDRESS 'SP000000000000000000002Q6VF78)
 
@@ -5,31 +6,36 @@
 ;; Evaluated at deploy time inside as-contract? context so tx-sender = contract.
 (define-constant SELF (as-contract? () tx-sender))
 
-(define-constant ERR-NOT-FOUND (err u100))
-(define-constant ERR-UNAUTHORIZED (err u101))
-(define-constant ERR-ALREADY-EXISTS (err u102))
-(define-constant ERR-DEADLINE-PASSED (err u103))
-(define-constant ERR-DEADLINE-NOT-PASSED (err u104))
-(define-constant ERR-ALREADY-SETTLED (err u105))
-(define-constant ERR-INVALID-AMOUNT (err u106))
-(define-constant ERR-INVALID-TYPE (err u107))
-(define-constant ERR-CHALLENGE-WINDOW-CLOSED (err u108))
-(define-constant ERR-ALREADY-VOTED (err u109))
-(define-constant ERR-NOT-READY-FOR-VOTING (err u110))
+;; ---- ERROR CODES (u100 - u110) ----
+(define-constant ERR-NOT-FOUND (err u100))                 ;; Vow or Bet record not found
+(define-constant ERR-UNAUTHORIZED (err u101))              ;; Action caller doesn't have privileges
+(define-constant ERR-ALREADY-EXISTS (err u102))            ;; Record already registered
+(define-constant ERR-DEADLINE-PASSED (err u103))           ;; Commitment deadline has elapsed
+(define-constant ERR-DEADLINE-NOT-PASSED (err u104))       ;; Action called before deadline completed
+(define-constant ERR-ALREADY-SETTLED (err u105))           ;; Vow status is terminal (Complete/Failed)
+(define-constant ERR-INVALID-AMOUNT (err u106))            ;; Stake or bet is under the threshold
+(define-constant ERR-INVALID-TYPE (err u107))              ;; Vow type matches incorrect status
+(define-constant ERR-CHALLENGE-WINDOW-CLOSED (err u108))   ;; Community voting window has ended
+(define-constant ERR-ALREADY-VOTED (err u109))             ;; Voter has already cast ballot for this vow
+(define-constant ERR-NOT-READY-FOR-VOTING (err u110))      ;; Challenge details are missing
 
-(define-constant MIN-STAKE u2000) ;; 0.002 STX
-(define-constant MIN-BET u100)    ;; 0.0001 STX
+;; ---- VALUE LIMITS ----
+(define-constant MIN-STAKE u2000) ;; Minimum commitment stake (0.002 STX)
+(define-constant MIN-BET u100)    ;; Minimum spectator bet (0.0001 STX)
 
-(define-constant VOW-TYPE-BURN u1)
-(define-constant VOW-TYPE-RIVAL u2)
-(define-constant VOW-TYPE-CAUSE u3)
+;; ---- VOW ENUM TYPES ----
+(define-constant VOW-TYPE-BURN u1)   ;; Slashed stakes get burned to SP00...02Q6VF78
+(define-constant VOW-TYPE-RIVAL u2)  ;; Adversarial challenge; winner takes whole pool
+(define-constant VOW-TYPE-CAUSE u3)  ;; Slashed stakes sent to cause principal address
 
-(define-constant STATUS-ACTIVE u1)
-(define-constant STATUS-COMPLETED u2)
-(define-constant STATUS-FAILED u3)
-(define-constant STATUS-CHALLENGED u4)
+;; ---- VOW STATUS ENUMS ----
+(define-constant STATUS-ACTIVE u1)      ;; Vow is active and deadline hasn't elapsed
+(define-constant STATUS-COMPLETED u2)   ;; Creator completed vow; stakes returned
+(define-constant STATUS-FAILED u3)      ;; Vow failed; stakes burned or sent to rival/cause
+(define-constant STATUS-CHALLENGED u4)  ;; Creator submitted proof; community voting active
 
-;; ~288 blocks = 48 hours at 10 min/block
+;; ---- TIMINGS ----
+;; ~288 Stacks blocks represents roughly 48 hours for challenge window
 (define-constant CHALLENGE-WINDOW u288)
 
 ;; ---- DATA ----

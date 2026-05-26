@@ -5,6 +5,10 @@ import { AppConfig, UserSession, showConnect } from '@stacks/connect';
 import { Connect } from '@stacks/connect-react';
 import { useState, useEffect } from 'react';
 
+/**
+ * Providers wraps the children components with the Stacks auth Connect context
+ * and handles client hydration mounting variables.
+ */
 export function Providers({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
   
@@ -26,6 +30,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     },
   };
 
+  // Wait until client hydration completes to avoid SSR mismatch on Auth states
   if (!mounted) return null;
 
   return (

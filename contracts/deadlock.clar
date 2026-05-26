@@ -1,3 +1,6 @@
+;; docs: header summary — added by automated edit for tracking
+;; This file contains the core Deadlock smart contract definitions and constants.
+
 ;; ---- DEPLOYMENT CONSTANTS ----
 (define-constant CONTRACT-OWNER tx-sender)
 (define-constant BURN-ADDRESS 'SP000000000000000000002Q6VF78)

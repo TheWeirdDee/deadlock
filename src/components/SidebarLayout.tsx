@@ -7,7 +7,13 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/Header';
 
-export function SidebarLayout({ children, activePage }: { children: React.ReactNode, activePage: 'analytics' | 'dashboard' | 'docs' | 'feed' }) {
+/**
+ * SidebarLayout component containing side navigation menu for authenticated users,
+ * and a standard page container wrapping core children views.
+ * @param children - Active page children layout
+ * @param activePage - Parameter denoting highlighted navigation button
+ */
+export function SidebarLayout({ children, activePage }: { children: React.ReactNode, activePage: 'analytics' | 'dashboard' | 'docs' | 'feed' | 'leaderboard' }) {
   const { doOpenAuth } = useConnect();
   const router = useRouter();
   const [userData, setUserData] = useState<any>(null);
@@ -76,6 +82,11 @@ export function SidebarLayout({ children, activePage }: { children: React.ReactN
               <li>
                 <Link href="/feed" className={`flex items-center px-2 py-2 rounded-md transition-colors ${activePage === 'feed' ? 'bg-purple-500/20 text-purple-400' : 'hover:bg-white/5 hover:text-white'}`}>
                   Vows Feed
+                </Link>
+              </li>
+              <li>
+                <Link href="/leaderboard" className={`flex items-center px-2 py-2 rounded-md transition-colors ${activePage === 'leaderboard' ? 'bg-purple-500/20 text-purple-400' : 'hover:bg-white/5 hover:text-white'}`}>
+                  Leaderboard
                 </Link>
               </li>
             </ul>

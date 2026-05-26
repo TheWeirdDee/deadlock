@@ -2,6 +2,8 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { VOW_TYPES } from '@/lib/types';
 
+// Docs: VowCard presentation notes (annotation)
+
 /**
  * VowCard component representing a summary grid item of a single commitment
  * vow card with details of stake amount, deadline, and a view action.

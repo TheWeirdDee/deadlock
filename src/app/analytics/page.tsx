@@ -9,6 +9,10 @@ import {
   AreaChart, Area
 } from 'recharts';
 
+/**
+ * AnalyticsPage component displaying general metrics regarding protocol stats
+ * including total STX locked, success rates, volume, and active pools charts.
+ */
 export default function AnalyticsPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('All tasks');

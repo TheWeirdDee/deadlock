@@ -111,8 +111,11 @@ export async function getVowCount(): Promise<number> {
     senderAddress: contractAddress,
   };
 
-  const result = await withRetry(() => callReadOnlyFunction(options));
-  return Number(cleanCV(cvToJSON(result)));
+  console.log('[contract] Fetching vow count');
+  const result = await withRetry(() => callReadOnlyFunction(options), 5, 1000);
+  const count = Number(cleanCV(cvToJSON(result)));
+  console.log('[contract] Vow count fetched:', count);
+  return count;
 }
 
 export async function getVow(vowId: number) {
@@ -125,8 +128,11 @@ export async function getVow(vowId: number) {
     senderAddress: contractAddress,
   };
 
-  const result = await withRetry(() => callReadOnlyFunction(options));
-  return cleanCV(cvToJSON(result));
+  console.log('[contract] Fetching vow', options.functionArgs[0].value);
+  const result = await withRetry(() => callReadOnlyFunction(options), 5, 1000);
+  const vow = cleanCV(cvToJSON(result));
+  console.log('[contract] Vow fetched:', vow);
+  return vow;
 }
 
 export async function getSpectatorPool(vowId: number) {

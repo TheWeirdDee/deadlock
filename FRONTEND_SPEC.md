@@ -194,3 +194,7 @@ Shown on `/vow/[id]` based on status and user role
 - Header collapses to logo + hamburger (or just logo + wallet button)
 - VowCard full width
 - Countdown compact on cards
+
+## Recent changes
+
+- Minor documentation annotations added across frontend files.

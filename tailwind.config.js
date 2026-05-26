@@ -1,3 +1,4 @@
+// Docs: Tailwind configuration notes for Deadlock UI
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [

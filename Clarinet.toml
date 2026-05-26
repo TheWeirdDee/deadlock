@@ -1,7 +1,8 @@
 [project]
 name = "deadlock"
-authors = []
-description = ""
+authors = ["Deadlock Protocol Team"]
+description = "Deadlock: A decentralized accountability protocol for staking STX against public vows and commitments on Stacks L2."
+
 [contracts.deadlock]
 path = "contracts/deadlock.clar"
 clarity_version = 3

@@ -108,6 +108,14 @@
 
 ;; ---- WRITE ----
 
+;; @desc Creates a new commitment (vow) and transfers the creator's STX stake to the contract.
+;; @param title: The task title (max 200 chars)
+;; @param description: Details of the task (max 500 chars)
+;; @param vow-type: 1 = Burn, 2 = Rival, 3 = Cause
+;; @param stake-amount: STX to stake (microSTX, min 2000)
+;; @param deadline-block: Absolute stacks block height for the deadline
+;; @param rival: Optional principal of the challenger (required for type 2)
+;; @param cause-wallet: Optional principal of the cause beneficiary (required for type 3)
 (define-public (create-vow
     (title (string-utf8 200))
     (description (string-utf8 500))
@@ -155,6 +163,9 @@
   )
 )
 
+;; @desc Allows the designated rival to accept and match the creator's stake on a Rival Vow.
+;; @param vow-id: The index identifier of the vow
+;; @param stake-amount: STX to stake (microSTX, must be >= creator's stake)
 (define-public (accept-rival-vow (vow-id uint) (stake-amount uint))
   (let ((vow (unwrap! (get-vow vow-id) ERR-NOT-FOUND)))
     (asserts! (is-eq (get vow-type vow) VOW-TYPE-RIVAL) ERR-INVALID-TYPE)
@@ -170,6 +181,10 @@
   )
 )
 
+;; @desc Allows third-party spectators to stake STX betting on vow success or failure.
+;; @param vow-id: The index identifier of the vow
+;; @param prediction: true = Bet creator succeeds, false = Bet creator fails
+;; @param amount: STX bet amount (microSTX, min 100)
 (define-public (spectate (vow-id uint) (prediction bool) (amount uint))
   (let (
     (vow (unwrap! (get-vow vow-id) ERR-NOT-FOUND))
@@ -193,6 +208,9 @@
   )
 )
 
+;; @desc Allows vow creator to submit a completion proof URL, starting the community challenge voting period.
+;; @param vow-id: The index identifier of the vow
+;; @param proof-url: URL referencing task completion proof (max 300 chars)
 (define-public (submit-completion (vow-id uint) (proof-url (string-utf8 300)))
   (let ((vow (unwrap! (get-vow vow-id) ERR-NOT-FOUND)))
     (asserts! (is-eq tx-sender (get creator vow)) ERR-UNAUTHORIZED)
@@ -209,6 +227,9 @@
   )
 )
 
+;; @desc Allows any user to vote "success" or "failure" on a challenged vow during its voting window.
+;; @param vow-id: The index identifier of the vow
+;; @param vote-success: true = Vote valid completion, false = Vote invalid/failure
 (define-public (vote-on-vow (vow-id uint) (vote-success bool))
   (let ((vow (unwrap! (get-vow vow-id) ERR-NOT-FOUND)))
     (asserts! (is-eq (get status vow) STATUS-CHALLENGED) ERR-UNAUTHORIZED)
@@ -228,6 +249,8 @@
   )
 )
 
+;; @desc Resolves a challenged vow after its voting window has closed, deciding settlement based on yes/no votes.
+;; @param vow-id: The index identifier of the vow
 (define-public (finalize-challenged-vow (vow-id uint))
   (let (
     (vow (unwrap! (get-vow vow-id) ERR-NOT-FOUND))
@@ -242,6 +265,8 @@
   )
 )
 
+;; @desc Allows any user to flag and settle an active vow as failed once its deadline has elapsed without proof submission.
+;; @param vow-id: The index identifier of the vow
 (define-public (claim-failure (vow-id uint))
   (let ((vow (unwrap! (get-vow vow-id) ERR-NOT-FOUND)))
     (asserts! (is-eq (get status vow) STATUS-ACTIVE) ERR-ALREADY-SETTLED)

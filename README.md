@@ -68,3 +68,7 @@ npm run divine -- --reset
 # Check log progress
 tail -f private/scripts/state/friend-farmer.log
 ```
+
+## Recent edits
+
+- Added small documentation comments and annotations across frontend and contract files for audit tracking.

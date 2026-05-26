@@ -2,6 +2,12 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { VOW_TYPES } from '@/lib/types';
 
+/**
+ * VowCard component representing a summary grid item of a single commitment
+ * vow card with details of stake amount, deadline, and a view action.
+ * @param vow - Vow object mapping fields
+ * @param index - Index offset in list for loading delay animations
+ */
 export function VowCard({ vow, index }: { vow: any; index: number }) {
   const typeLabel = 
     vow.vowType === VOW_TYPES.BURN ? 'BURN' :

@@ -11,9 +11,39 @@ import {
   ReadOnlyFunctionOptions 
 } from '@stacks/transactions';
 
+// -----------------------------------------------------------------------------
+// Environment validation – warn early if required variables are missing
+// -----------------------------------------------------------------------------
+if (!process.env.NEXT_PUBLIC_CONTRACT_ADDRESS) {
+  console.error('[deadlock] Missing NEXT_PUBLIC_CONTRACT_ADDRESS env var');
+}
+if (!process.env.NEXT_PUBLIC_NETWORK) {
+  console.error('[deadlock] Missing NEXT_PUBLIC_NETWORK env var (expected "mainnet" or "testnet")');
+}
+
+
 const network = process.env.NEXT_PUBLIC_NETWORK === 'mainnet' 
   ? new StacksMainnet() 
   : new StacksTestnet();
+
+// -----------------------------------------------------------------------------
+// Helper: simple exponential back‑off retry for async calls
+// -----------------------------------------------------------------------------
+async function withRetry<T>(fn: () => Promise<T>, attempts = 3, baseDelay = 500): Promise<T> {
+  let lastError: any;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn();
+    } catch (e) {
+      lastError = e;
+      const delay = baseDelay * Math.pow(2, i) + Math.random() * 100;
+      console.warn(`[deadlock] Retry ${i + 1}/${attempts} after error:`, e);
+      await new Promise(r => setTimeout(r, delay));
+    }
+  }
+  throw lastError;
+}
+
 
 const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS!;
 const contractName = process.env.NEXT_PUBLIC_CONTRACT_NAME || 'deadlock-clar';
@@ -81,8 +111,11 @@ export async function getVowCount(): Promise<number> {
     senderAddress: contractAddress,
   };
 
-  const result = await callReadOnlyFunction(options);
-  return Number(cleanCV(cvToJSON(result)));
+  console.log('[contract] Fetching vow count');
+  const result = await withRetry(() => callReadOnlyFunction(options), 5, 1000);
+  const count = Number(cleanCV(cvToJSON(result)));
+  console.log('[contract] Vow count fetched:', count);
+  return count;
 }
 
 export async function getVow(vowId: number) {
@@ -97,8 +130,11 @@ export async function getVow(vowId: number) {
     senderAddress: contractAddress,
   };
 
-  const result = await callReadOnlyFunction(options);
-  return cleanCV(cvToJSON(result));
+  console.log('[contract] Fetching vow', options.functionArgs[0].value);
+  const result = await withRetry(() => callReadOnlyFunction(options), 5, 1000);
+  const vow = cleanCV(cvToJSON(result));
+  console.log('[contract] Vow fetched:', vow);
+  return vow;
 }
 
 export async function getSpectatorPool(vowId: number) {
@@ -111,7 +147,7 @@ export async function getSpectatorPool(vowId: number) {
     senderAddress: contractAddress,
   };
 
-  const result = await callReadOnlyFunction(options);
+  const result = await withRetry(() => callReadOnlyFunction(options));
   return cleanCV(cvToJSON(result));
 }
 

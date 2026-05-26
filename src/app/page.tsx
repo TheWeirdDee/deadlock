@@ -121,7 +121,7 @@ export default function Home() {
       <Header userData={userData} handleLogin={handleLogin} handleLogout={handleLogout} />
 
       {/* Hero Redesign based on TIXTA Layout */}
-      <section className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-12 items-center mb-4 mt-8 relative z-10">
+      <section className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-12 items-center mb-4 mt-4 relative z-10">
             
             {/* Left Column - Content */}
             <div className="lg:col-span-7 flex flex-col items-start text-left">

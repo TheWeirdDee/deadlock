@@ -275,6 +275,8 @@
   )
 )
 
+;; @desc Allows successful spectators to claim their initial bet plus their share of the losing pool's stakes.
+;; @param vow-id: The index identifier of the vow
 (define-public (claim-spectator-winnings (vow-id uint))
   (let (
     ;; Capture caller BEFORE as-contract? changes tx-sender to the contract
@@ -316,6 +318,9 @@
 
 ;; ---- PRIVATE ----
 
+;; @desc Settles a vow successfully, returning staked funds to the creator (and rival if they joined).
+;; @param vow-id: The index identifier of the vow
+;; @param vow: The vow structure representation
 (define-private (settle-success (vow-id uint) (vow {
     creator: principal, title: (string-utf8 200), description: (string-utf8 500),
     vow-type: uint, stake-amount: uint, deadline-block: uint, status: uint,
@@ -343,6 +348,9 @@
   )
 )
 
+;; @desc Settles a failed vow, slashing creator's stake depending on the vow type (burn, send to rival, or send to cause).
+;; @param vow-id: The index identifier of the vow
+;; @param vow: The vow structure representation
 (define-private (settle-failure (vow-id uint) (vow {
     creator: principal, title: (string-utf8 200), description: (string-utf8 500),
     vow-type: uint, stake-amount: uint, deadline-block: uint, status: uint,

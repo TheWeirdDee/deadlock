@@ -1,4 +1,6 @@
-'use client';
+ 'use client';
+
+// Docs: Developer docs page (annotation)
 
 import { useState, useEffect } from 'react';
 import { useConnect } from '@stacks/connect-react';

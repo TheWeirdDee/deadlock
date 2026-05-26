@@ -1,3 +1,5 @@
+[# Docs] Clarinet configuration for Deadlock project (comments only)
+
 [project]
 name = "deadlock"
 authors = ["Deadlock Protocol Team"]

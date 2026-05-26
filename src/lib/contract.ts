@@ -130,7 +130,7 @@ export async function getVow(vowId: number) {
     senderAddress: contractAddress,
   };
 
-  console.log('[contract] Fetching vow', options.functionArgs[0].value);
+  // console.log('[contract] Fetching vow', options.functionArgs[0].value);
   const result = await withRetry(() => callReadOnlyFunction(options), 5, 1000);
   const vow = cleanCV(cvToJSON(result));
   console.log('[contract] Vow fetched:', vow);

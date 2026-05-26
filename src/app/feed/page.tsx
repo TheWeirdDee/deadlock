@@ -1,6 +1,5 @@
  'use client';
 
-// Docs: Feed auto-refresh and pagination notes (annotation)
 
 import { useState, useEffect } from 'react';
 import { useConnect } from '@stacks/connect-react';

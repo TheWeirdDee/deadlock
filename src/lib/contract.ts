@@ -86,11 +86,13 @@ export async function getVowCount(): Promise<number> {
 }
 
 export async function getVow(vowId: number) {
+  const args = [uintCV(vowId.toString())];
+  console.log('[contract] Fetching vow', args[0]);
   const options: ReadOnlyFunctionOptions = {
     contractAddress,
     contractName,
     functionName: 'get-vow',
-    functionArgs: [uintCV(vowId.toString())],
+    functionArgs: args,
     network,
     senderAddress: contractAddress,
   };

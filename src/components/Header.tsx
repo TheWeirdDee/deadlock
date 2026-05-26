@@ -1,4 +1,6 @@
-'use client';
+ 'use client';
+
+// Docs: Header navigation and wallet controls (annotation)
 
 import Link from 'next/link';
 

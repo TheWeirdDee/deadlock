@@ -10,6 +10,10 @@ import { SidebarLayout } from '@/components/SidebarLayout';
 import { VowCard } from '@/components/VowCard';
 import { useRouter } from 'next/navigation';
 
+/**
+ * DashboardPage component providing a personalized profile summary for logged in
+ * user wallets, containing active commitments, spectator bets, and win/loss rates.
+ */
 export default function DashboardPage() {
   const { doOpenAuth } = useConnect();
   const router = useRouter();

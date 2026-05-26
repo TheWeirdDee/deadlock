@@ -5,6 +5,7 @@
 @tailwind utilities;
 
 @layer base {
+  /* Establishes the core black base theme with subtle HSL glowing radial spots */
   body {
     @apply bg-[#030303] text-gray-200 font-space overflow-x-hidden relative min-h-screen;
     background-image: 
@@ -13,6 +14,7 @@
     background-attachment: fixed;
   }
   
+  /* Creates a futuristic dot-matrix overlay across the background */
   body::before {
     content: '';
     position: fixed;
@@ -27,6 +29,7 @@
     -webkit-mask-image: radial-gradient(circle at center, black 40%, transparent 80%);
   }
 
+  /* Map headings to Bebas Neue font for an uppercase industrial aesthetic */
   h1, h2, h3, h4, h5, h6 {
     @apply font-bebas tracking-wider text-white;
   }

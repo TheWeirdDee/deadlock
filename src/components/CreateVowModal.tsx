@@ -15,6 +15,12 @@ import { motion } from 'framer-motion';
 import { VOW_TYPES } from '@/lib/types';
 import { contractDetails, getNetwork } from '@/lib/contract';
 
+/**
+ * CreateVowModal provides a multi-step popup form containing input validation
+ * and hooks to invoke the `create-vow` Clarity contract call transaction.
+ * @param isOpen - Flag controlling modal render status
+ * @param onClose - Handler invoked to dismiss the modal
+ */
 export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
   const { doContractCall } = useConnect();
   const [title, setTitle] = useState('');

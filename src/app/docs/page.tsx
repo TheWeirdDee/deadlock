@@ -7,6 +7,10 @@ import { SidebarLayout } from '@/components/SidebarLayout';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 
+/**
+ * DocsPage component providing developer integration documentation
+ * explaining Clarity contract interactions and React bindings.
+ */
 export default function DocsPage() {
   const { doOpenAuth } = useConnect();
   const router = useRouter();

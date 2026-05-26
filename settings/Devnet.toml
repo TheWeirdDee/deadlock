@@ -1,0 +1,3 @@
+# Devnet settings for local testing (annotation)
+network = "devnet"
+node = "http://localhost:20443"

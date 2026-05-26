@@ -29,6 +29,14 @@ const network = process.env.NEXT_PUBLIC_NETWORK === 'mainnet'
 // -----------------------------------------------------------------------------
 // Helper: simple exponential back‑off retry for async calls
 // -----------------------------------------------------------------------------
+/**
+ * Executes a promise-returning function with exponential backoff retries.
+ * Used to handle transient Stacks API network fluctuations or rate limits.
+ * @param fn - The asynchronous function execution scope
+ * @param attempts - Maximum execution attempts (default 3)
+ * @param baseDelay - Starting delay in milliseconds (default 500ms)
+ * @returns The resolved promise value
+ */
 async function withRetry<T>(fn: () => Promise<T>, attempts = 3, baseDelay = 500): Promise<T> {
   let lastError: any;
   for (let i = 0; i < attempts; i++) {
@@ -44,12 +52,18 @@ async function withRetry<T>(fn: () => Promise<T>, attempts = 3, baseDelay = 500)
   throw lastError;
 }
 
-
 const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS!;
 const contractName = process.env.NEXT_PUBLIC_CONTRACT_NAME || 'deadlock-clar';
 
+/**
+ * Returns the currently active Stacks Network configuration object.
+ */
 export const getNetwork = () => network;
 
+/**
+ * Recursively cleans CV JSON outputs by parsing tuples, optionals, and integers.
+ * @param obj - Raw CV JSON representation
+ */
 function cleanCV(obj: any): any {
   if (obj === null || obj === undefined) return null;
   
@@ -101,6 +115,10 @@ function cleanCV(obj: any): any {
   return obj;
 }
 
+/**
+ * Fetches the total number of vows created on the smart contract.
+ * @returns The vow count integer
+ */
 export async function getVowCount(): Promise<number> {
   const options: ReadOnlyFunctionOptions = {
     contractAddress,
@@ -118,6 +136,10 @@ export async function getVowCount(): Promise<number> {
   return count;
 }
 
+/**
+ * Fetches the detailed fields of a specific vow ID from the contract.
+ * @param vowId - The index identifier of the vow to fetch
+ */
 export async function getVow(vowId: number) {
   const args = [uintCV(vowId.toString())];
   console.log('[contract] Fetching vow', args[0]);
@@ -136,6 +158,10 @@ export async function getVow(vowId: number) {
   return vow;
 }
 
+/**
+ * Fetches the spectator betting pool sums (success and failure pools) for a vow ID.
+ * @param vowId - The index identifier of the vow
+ */
 export async function getSpectatorPool(vowId: number) {
   const options: ReadOnlyFunctionOptions = {
     contractAddress,
@@ -150,6 +176,9 @@ export async function getSpectatorPool(vowId: number) {
   return cleanCV(cvToJSON(result));
 }
 
+/**
+ * Exposed contract parameters config details.
+ */
 export const contractDetails = {
   address: contractAddress,
   name: contractName,

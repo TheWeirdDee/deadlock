@@ -5,15 +5,41 @@ import { VOW_TYPES } from '@/lib/types';
 // Docs: VowCard presentation notes (annotation)
 
 /**
+ * Returns the Tailwind border/text color class for a given vow type.
+ * Used to consistently apply type-specific accent colors across the card.
+ */
+function getTypeColor(vowType: number): string {
+  if (vowType === VOW_TYPES.BURN) return 'border-purple-400 text-purple-400';
+  if (vowType === VOW_TYPES.RIVAL) return 'border-blue-400 text-blue-400';
+  return 'border-green-400 text-green-400'; // CAUSE
+}
+
+/**
+ * Returns the hover background + text class for a vow type action button.
+ */
+function getTypeButtonClass(vowType: number): string {
+  if (vowType === VOW_TYPES.BURN) return 'bg-purple-400/10 text-purple-400 hover:bg-purple-400 hover:text-white';
+  if (vowType === VOW_TYPES.RIVAL) return 'bg-blue-400/10 text-blue-400 hover:bg-blue-400 hover:text-white';
+  return 'bg-green-400/10 text-green-400 hover:bg-green-400 hover:text-white'; // CAUSE
+}
+
+/**
+ * Returns a human-readable label for the vow type enum value.
+ */
+function getTypeLabel(vowType: number): string {
+  if (vowType === VOW_TYPES.BURN) return 'BURN';
+  if (vowType === VOW_TYPES.RIVAL) return 'RIVAL';
+  return 'CAUSE';
+}
+
+/**
  * VowCard component representing a summary grid item of a single commitment
  * vow card with details of stake amount, deadline, and a view action.
  * @param vow - Vow object mapping fields
  * @param index - Index offset in list for loading delay animations
  */
 export function VowCard({ vow, index }: { vow: any; index: number }) {
-  const typeLabel = 
-    vow.vowType === VOW_TYPES.BURN ? 'BURN' :
-    vow.vowType === VOW_TYPES.RIVAL ? 'RIVAL' : 'CAUSE';
+  const typeLabel = getTypeLabel(vow.vowType);
 
   return (
     <motion.div
@@ -24,10 +50,7 @@ export function VowCard({ vow, index }: { vow: any; index: number }) {
       className={`glass-card p-6 flex flex-col h-full border-t-2 border-white/10`}
     >
       <div className="flex justify-between items-start mb-4">
-        <span className={`status-badge ${
-          vow.vowType === VOW_TYPES.BURN ? 'border-purple-400 text-purple-400' :
-          vow.vowType === VOW_TYPES.RIVAL ? 'border-blue-400 text-blue-400' : 'border-green-400 text-green-400'
-        }`}>
+        <span className={`status-badge ${getTypeColor(vow.vowType)}`} aria-label={`Vow type: ${typeLabel}`}>
           {typeLabel}
         </span>
         <span className="text-[10px] opacity-40 flex items-center gap-1 max-w-[180px]">
@@ -68,11 +91,10 @@ export function VowCard({ vow, index }: { vow: any; index: number }) {
           </button>
         ) : (
           <Link href={`/vow/${vow.id}`} className="w-full">
-            <button className={`w-full py-2 font-bold uppercase text-xs transition-all ${
-              vow.vowType === VOW_TYPES.BURN ? 'bg-purple-400/10 text-purple-400 hover:bg-purple-400 hover:text-white' :
-              vow.vowType === VOW_TYPES.RIVAL ? 'bg-blue-400/10 text-blue-400 hover:bg-blue-400 hover:text-white' : 
-              'bg-green-400/10 text-green-400 hover:bg-green-400 hover:text-white'
-            }`}>
+            <button
+              className={`w-full py-2 font-bold uppercase text-xs transition-all ${getTypeButtonClass(vow.vowType)}`}
+              aria-label={`View vow #${vow.id}: ${vow.title}`}
+            >
               VIEW CHALLENGE
             </button>
           </Link>

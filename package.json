@@ -7,6 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "type-check": "tsc --noEmit",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
+    "check": "npm run type-check && npm run lint",
     "divine": "npx tsx private/scripts/divine.ts",
     "docs:info": "echo \"docs edits\""
   },

@@ -1,4 +1,3 @@
-;; docs: header summary — added by automated edit for tracking
 ;; This file contains the core Deadlock smart contract definitions and constants.
 
 ;; ---- DEPLOYMENT CONSTANTS ----

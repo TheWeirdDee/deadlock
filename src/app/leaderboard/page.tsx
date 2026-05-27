@@ -1,6 +1,5 @@
  'use client';
 
-// Docs: Leaderboard aggregation notes (annotation)
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';

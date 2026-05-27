@@ -1,6 +1,5 @@
  'use client';
 
-
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SidebarLayout } from '@/components/SidebarLayout';
@@ -52,6 +51,7 @@ export default function LeaderboardPage() {
       const updatedVows = [...cachedVows];
       
       if (chainCount > lastSyncedId) {
+        // Show sync progress — only fetch the delta (new vows since last sync)
         setSyncProgress({ current: 0, total: chainCount - lastSyncedId });
         
         for (let i = lastSyncedId + 1; i <= chainCount; i++) {
@@ -77,7 +77,8 @@ export default function LeaderboardPage() {
         }
       }
 
-      // Aggregate reputation scores
+      // Aggregate reputation scores from the complete merged vow set.
+      // Each wallet starts at a baseline of 100 XP and gains/loses based on outcomes.
       const statsMap: Record<string, LeaderboardEntry> = {};
 
       const getOrCreateEntry = (addr: string): LeaderboardEntry => {

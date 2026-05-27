@@ -1,43 +1,67 @@
 {
+  /**
+   * TypeScript compiler configuration for the Deadlock Next.js dApp.
+   *
+   * Key decisions:
+   *  - `moduleResolution: bundler` — required for Next.js 14 with ESM packages
+   *  - `paths: { "@/*" }` — maps @/ imports to ./src/ for clean absolute imports
+   *  - `strict: true` — catches type errors early, especially in contract call args
+   *  - `isolatedModules` — ensures each file can be transpiled independently (Babel compat)
+   *  - `private/` excluded — automation scripts are TypeScript but not part of the app build
+   */
   "compilerOptions": {
+    // Compile to ES2017 — broad browser support while allowing async/await natively
     "target": "ES2017",
     "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
+      "dom",         // Browser DOM APIs (window, document, etc.)
+      "dom.iterable", // Iterable DOM collections (NodeList, HTMLCollection)
+      "esnext"       // Latest ECMAScript proposals (Promise, etc.)
     ],
+    // Allow importing .js files alongside .ts (useful for legacy utils)
     "allowJs": true,
+    // Skip type-checking of all declaration files in node_modules (faster builds)
     "skipLibCheck": true,
+    // Strict mode: enables strictNullChecks, noImplicitAny, etc.
     "strict": true,
+    // Don't emit compiled files — Next.js handles compilation via webpack
     "noEmit": true,
+    // Allow default imports from modules that don't export a default (CJS compat)
     "esModuleInterop": true,
+    // Use ESNext modules — Next.js/webpack handles bundling
     "module": "esnext",
+    // bundler resolution: Next.js 14 requirement for proper ESM package resolution
     "moduleResolution": "bundler",
+    // Allow importing JSON files as typed modules
     "resolveJsonModule": true,
+    // Each file must be independently transpilable (required for SWC/Babel)
     "isolatedModules": true,
+    // Preserve JSX — Next.js/React handles JSX transformation
     "jsx": "preserve",
+    // Cache incremental type-check info for faster rebuilds
     "incremental": true,
     "plugins": [
       {
+        // Next.js TypeScript plugin: provides IDE support for app router
         "name": "next"
       }
     ],
     "paths": {
+      // @/ maps to ./src/ — enables clean absolute imports like @/lib/contract
       "@/*": [
         "./src/*"
       ]
     }
   },
   "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts",
+    "next-env.d.ts",      // Next.js generated type declarations
+    "**/*.ts",            // All TypeScript source files
+    "**/*.tsx",           // All TypeScript React component files
+    ".next/types/**/*.ts", // Next.js generated app router types
     ".next/dev/types/**/*.ts",
-    "**/*.mts"
+    "**/*.mts"            // Module TypeScript files (ESM)
   ],
   "exclude": [
-    "node_modules",
-    "private"
+    "node_modules",  // Never type-check dependencies
+    "private"        // Automation scripts excluded from app build
   ]
 }

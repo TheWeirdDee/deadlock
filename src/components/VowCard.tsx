@@ -32,6 +32,34 @@ function getTypeLabel(vowType: number): string {
 }
 
 /**
+ * Returns the Tailwind border/text color class for a given vow type.
+ * Used to consistently apply type-specific accent colors across the card.
+ */
+function getTypeColor(vowType: number): string {
+  if (vowType === VOW_TYPES.BURN) return 'border-purple-400 text-purple-400';
+  if (vowType === VOW_TYPES.RIVAL) return 'border-blue-400 text-blue-400';
+  return 'border-green-400 text-green-400'; // CAUSE
+}
+
+/**
+ * Returns the hover background + text class for a vow type action button.
+ */
+function getTypeButtonClass(vowType: number): string {
+  if (vowType === VOW_TYPES.BURN) return 'bg-purple-400/10 text-purple-400 hover:bg-purple-400 hover:text-white';
+  if (vowType === VOW_TYPES.RIVAL) return 'bg-blue-400/10 text-blue-400 hover:bg-blue-400 hover:text-white';
+  return 'bg-green-400/10 text-green-400 hover:bg-green-400 hover:text-white'; // CAUSE
+}
+
+/**
+ * Returns a human-readable label for the vow type enum value.
+ */
+function getTypeLabel(vowType: number): string {
+  if (vowType === VOW_TYPES.BURN) return 'BURN';
+  if (vowType === VOW_TYPES.RIVAL) return 'RIVAL';
+  return 'CAUSE';
+}
+
+/**
  * VowCard component representing a summary grid item of a single commitment
  * vow card with details of stake amount, deadline, and a view action.
  * @param vow - Vow object mapping fields

@@ -1,6 +1,20 @@
  'use client';
 
-// Docs: Vow detail page notes (annotation)
+/**
+ * Vow Detail Page — /vow/[id]
+ *
+ * The public page for a specific on-chain vow. Accessible without authentication.
+ * Shows all vow metadata, spectator betting pool, and allows:
+ *   - Spectators to place bets on success/failure
+ *   - Creator to submit proof of completion
+ *   - Community to vote on challenged vows
+ *
+ * Features:
+ *   - Block-height countdown: fetches Hiro API stacks_tip_height on load
+ *   - ROI Simulator: calculates projected spectator payout at slider amount
+ *   - Social Proof Embed: auto-embeds GitHub commits/PRs, Twitter, YouTube
+ *   - Calendar Export: Google Calendar link + downloadable .ics file
+ */
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
@@ -240,6 +254,11 @@ export default function VowPage() {
   };
 
   // ROI Calculator Calculations
+  // The spectator pool works as a parimutuel market:
+  //   - Winning side splits the losing side's pool proportionally by stake share
+  //   - Formula: payout = bet + (bet / newWinPool) * losePool
+  //   - roiMultiplier = totalPayout / betAmount
+  // Note: uses current pool sizes, not post-settlement values (approximation only)
   const successPool = Number(pool?.['success-pool'] || 0) / 1000000;
   const failurePool = Number(pool?.['failure-pool'] || 0) / 1000000;
   
@@ -248,14 +267,16 @@ export default function VowPage() {
   let netProfit = 0;
 
   if (simPrediction) {
-    // Bet on success
+    // Simulating a bet on SUCCESS:
+    // Share of failure pool = (myBet / newSuccessPool) * failurePool
     const newSuccessPool = successPool + simAmount;
     const share = newSuccessPool === 0 ? 0 : (simAmount * failurePool) / newSuccessPool;
     estimatedPayout = simAmount + share;
     netProfit = share;
     roiMultiplier = simAmount === 0 ? 1.0 : estimatedPayout / simAmount;
   } else {
-    // Bet on failure
+    // Simulating a bet on FAILURE:
+    // Share of success pool = (myBet / newFailurePool) * successPool
     const newFailurePool = failurePool + simAmount;
     const share = newFailurePool === 0 ? 0 : (simAmount * successPool) / newFailurePool;
     estimatedPayout = simAmount + share;

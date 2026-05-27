@@ -1,24 +1,5 @@
  'use client';
 
-/**
- * CreateVowModal — popup form for initiating a new on-chain vow.
- *
- * Contract function called: `create-vow`
- * Arguments (in order):
- *   1. title (string-utf8)
- *   2. description (string-utf8)
- *   3. vow-type (uint): 1=burn, 2=rival, 3=cause
- *   4. stake-amount (uint, in microSTX)
- *   5. deadline-block (uint, Stacks block height)
- *   6. rival (optional principal): set for RIVAL type, none otherwise
- *   7. cause-wallet (optional principal): set for CAUSE type, none otherwise
- *
- * Pending vow strategy:
- *   After broadcasting, saves the vow locally to localStorage ('pending_vows')
- *   so it appears in the feed immediately before on-chain confirmation.
- *   The feed page reconciles and removes confirmed pending vows on re-load.
- */
-
 import { useState } from 'react';
 import { useConnect } from '@stacks/connect-react';
 import { 

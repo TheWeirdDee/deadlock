@@ -1,7 +1,5 @@
  'use client';
 
-// Docs: Feed auto-refresh and pagination notes (annotation)
-
 import { useState, useEffect } from 'react';
 import { useConnect } from '@stacks/connect-react';
 import { AppConfig, UserSession } from '@stacks/connect';
@@ -42,7 +40,9 @@ export default function FeedPage() {
       const count = await getVowCount();
       console.log('[feed] Vow count:', count);
       const fetchedVows: any[] = [];
-      // Fetch up to 50 vows for the full feed
+
+      // Fetch the 50 most recent vows (reverse order, newest first).
+      // We cap at 50 to avoid exhausting the Hiro API rate limit on page load.
       for (let i = count - 1; i >= Math.max(0, count - 50); i--) {
         console.log('[feed] Fetching vow id', i);
         try {
@@ -54,7 +54,7 @@ export default function FeedPage() {
         } catch (err) {
           console.error('[feed] Error fetching vow', i, err);
         }
-        // Small delay to respect rate limits
+        // 200ms delay between requests to respect Hiro API rate limits
         await new Promise(r => setTimeout(r, 200));
       }
       
@@ -63,12 +63,16 @@ export default function FeedPage() {
         const stored = localStorage.getItem('pending_vows');
         if (stored) {
           const parsed = JSON.parse(stored);
+          // Filter out any pending vows that have now been confirmed on-chain
+          // by matching title + description against the freshly fetched set.
+          // Matched entries are removed from the pending cache.
           pendingVows = parsed.filter((pending: any) => {
             return !fetchedVows.some(
               confirmed => confirmed.title === pending.title && 
                            confirmed.description === pending.description
             );
           });
+          // Sync the cleaned pending list back to localStorage
           if (pendingVows.length !== parsed.length) {
             localStorage.setItem('pending_vows', JSON.stringify(pendingVows));
           }

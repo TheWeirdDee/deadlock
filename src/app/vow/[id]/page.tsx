@@ -1,7 +1,5 @@
  'use client';
 
-// Docs: Vow detail page notes (annotation)
-
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useConnect } from '@stacks/connect-react';
@@ -209,12 +207,18 @@ export default function VowPage() {
   const isCreator = userData?.profile?.stxAddress?.mainnet === vow.creator || userData?.profile?.stxAddress?.testnet === vow.creator;
   const isRival = vow.rival === userData?.profile?.stxAddress?.mainnet || vow.rival === userData?.profile?.stxAddress?.testnet;
 
-  // Stacks countdown and calendar calculations
+  // Block-height countdown calculations
+  // Stacks blocks average ~10 minutes each (600 seconds).
+  // blocksDelta = blocks remaining until deadline block.
+  // estimatedSeconds converts blocks to real-world time approximation.
+  // Note: this is an estimate — actual Stacks block times vary.
   const blocksDelta = Number(vow.deadlineBlock || vow['deadline-block']) - (currentBlock || 0);
   const isExpired = blocksDelta <= 0;
-  const estimatedSeconds = blocksDelta * 600; // 10 min average
+  const estimatedSeconds = blocksDelta * 600; // 600s = ~10 min per block average
   const estimatedDeadlineDate = new Date(Date.now() + estimatedSeconds * 1000);
 
+  // Calendar event times: use estimated deadline as the event start,
+  // with a 30-minute event window as a reasonable review/check-in slot.
   const utcStart = formatUTC(estimatedDeadlineDate);
   const utcEnd = formatUTC(new Date(estimatedDeadlineDate.getTime() + 30 * 60 * 1000));
   const googleCalUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`DEADLOCK Vow: ${vow.title}`)}&details=${encodeURIComponent(`Vow: ${vow.title}\nDescription: ${vow.description}\nCreator: ${vow.creator}\nStake: ${Number(vow.stakeAmount || vow['stake-amount']) / 1000000} STX`)}&dates=${utcStart}/${utcEnd}`;
@@ -240,6 +244,11 @@ export default function VowPage() {
   };
 
   // ROI Calculator Calculations
+  // The spectator pool works as a parimutuel market:
+  //   - Winning side splits the losing side's pool proportionally by stake share
+  //   - Formula: payout = bet + (bet / newWinPool) * losePool
+  //   - roiMultiplier = totalPayout / betAmount
+  // Note: uses current pool sizes, not post-settlement values (approximation only)
   const successPool = Number(pool?.['success-pool'] || 0) / 1000000;
   const failurePool = Number(pool?.['failure-pool'] || 0) / 1000000;
   
@@ -248,14 +257,16 @@ export default function VowPage() {
   let netProfit = 0;
 
   if (simPrediction) {
-    // Bet on success
+    // Simulating a bet on SUCCESS:
+    // Share of failure pool = (myBet / newSuccessPool) * failurePool
     const newSuccessPool = successPool + simAmount;
     const share = newSuccessPool === 0 ? 0 : (simAmount * failurePool) / newSuccessPool;
     estimatedPayout = simAmount + share;
     netProfit = share;
     roiMultiplier = simAmount === 0 ? 1.0 : estimatedPayout / simAmount;
   } else {
-    // Bet on failure
+    // Simulating a bet on FAILURE:
+    // Share of success pool = (myBet / newFailurePool) * successPool
     const newFailurePool = failurePool + simAmount;
     const share = newFailurePool === 0 ? 0 : (simAmount * successPool) / newFailurePool;
     estimatedPayout = simAmount + share;
@@ -263,22 +274,33 @@ export default function VowPage() {
     roiMultiplier = simAmount === 0 ? 1.0 : estimatedPayout / simAmount;
   }
 
-  // Parse social preview widgets
+  // Social proof URL parsing
+  // The proofUrl field can contain links to:
+  //   - Twitter/X posts: embedded via Twitter iframe widget
+  //   - YouTube videos: embedded via YouTube /embed/ iframe
+  //   - GitHub commits: fetched via GitHub REST API and rendered as a code card
+  //   - GitHub PRs: fetched via GitHub REST API and rendered as a PR summary
+  //   - Any other URL: shown as a plain "Visit Proof Link" button
+  // Parser runs client-side only (no server API proxy needed for public content).
   const proofUrlStr = vow.proofUrl || vow['proof-url'] || '';
   const isTwitterProof = proofUrlStr.includes('twitter.com') || proofUrlStr.includes('x.com');
   const isYoutubeProof = proofUrlStr.includes('youtube.com') || proofUrlStr.includes('youtu.be');
   
+  // Extract tweet ID from URL path: twitter.com/user/status/TWEET_ID
   let parsedTweetId = '';
   if (isTwitterProof) {
     const parts = proofUrlStr.split('/');
     parsedTweetId = parts[parts.length - 1]?.split('?')[0] || '';
   }
 
+  // Extract YouTube video ID from both youtu.be/ID and youtube.com/watch?v=ID formats
   let parsedYoutubeId = '';
   if (isYoutubeProof) {
     if (proofUrlStr.includes('youtu.be/')) {
+      // Short URL format: youtu.be/VIDEO_ID
       parsedYoutubeId = proofUrlStr.split('youtu.be/')[1]?.split('?')[0] || '';
     } else {
+      // Standard URL format: youtube.com/watch?v=VIDEO_ID
       parsedYoutubeId = proofUrlStr.split('v=')[1]?.split('&')[0] || '';
     }
   }

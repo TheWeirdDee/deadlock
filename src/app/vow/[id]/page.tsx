@@ -262,22 +262,33 @@ export default function VowPage() {
     roiMultiplier = simAmount === 0 ? 1.0 : estimatedPayout / simAmount;
   }
 
-  // Parse social preview widgets
+  // Social proof URL parsing
+  // The proofUrl field can contain links to:
+  //   - Twitter/X posts: embedded via Twitter iframe widget
+  //   - YouTube videos: embedded via YouTube /embed/ iframe
+  //   - GitHub commits: fetched via GitHub REST API and rendered as a code card
+  //   - GitHub PRs: fetched via GitHub REST API and rendered as a PR summary
+  //   - Any other URL: shown as a plain "Visit Proof Link" button
+  // Parser runs client-side only (no server API proxy needed for public content).
   const proofUrlStr = vow.proofUrl || vow['proof-url'] || '';
   const isTwitterProof = proofUrlStr.includes('twitter.com') || proofUrlStr.includes('x.com');
   const isYoutubeProof = proofUrlStr.includes('youtube.com') || proofUrlStr.includes('youtu.be');
   
+  // Extract tweet ID from URL path: twitter.com/user/status/TWEET_ID
   let parsedTweetId = '';
   if (isTwitterProof) {
     const parts = proofUrlStr.split('/');
     parsedTweetId = parts[parts.length - 1]?.split('?')[0] || '';
   }
 
+  // Extract YouTube video ID from both youtu.be/ID and youtube.com/watch?v=ID formats
   let parsedYoutubeId = '';
   if (isYoutubeProof) {
     if (proofUrlStr.includes('youtu.be/')) {
+      // Short URL format: youtu.be/VIDEO_ID
       parsedYoutubeId = proofUrlStr.split('youtu.be/')[1]?.split('?')[0] || '';
     } else {
+      // Standard URL format: youtube.com/watch?v=VIDEO_ID
       parsedYoutubeId = proofUrlStr.split('v=')[1]?.split('&')[0] || '';
     }
   }

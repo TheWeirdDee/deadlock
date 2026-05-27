@@ -1,6 +1,24 @@
  'use client';
 
-// Docs: Leaderboard aggregation notes (annotation)
+/**
+ * Leaderboard Page — /leaderboard
+ *
+ * Aggregates all on-chain vow data into a reputation ranking for every
+ * wallet that has participated in the Deadlock protocol.
+ *
+ * Caching strategy:
+ *  - All fetched vows are stored in localStorage ('deadlock_vows_cache')
+ *    as { lastSyncedId: number, vows: VowData[] }
+ *  - On load: only vows with ID > lastSyncedId are re-fetched (incremental)
+ *  - This reduces API calls from O(total) to O(new_since_last_visit)
+ *
+ * Reputation scoring (frontend only, not on-chain):
+ *  - Baseline: 100 XP per wallet
+ *  - +100 XP for each completed vow
+ *  - -150 XP for each failed vow (can go negative)
+ *  - +10 XP for each active vow (participation bonus)
+ *  - Rival participants scored inversely (rival wins when creator fails)
+ */
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -53,6 +71,7 @@ export default function LeaderboardPage() {
       const updatedVows = [...cachedVows];
       
       if (chainCount > lastSyncedId) {
+        // Show sync progress — only fetch the delta (new vows since last sync)
         setSyncProgress({ current: 0, total: chainCount - lastSyncedId });
         
         for (let i = lastSyncedId + 1; i <= chainCount; i++) {
@@ -78,7 +97,8 @@ export default function LeaderboardPage() {
         }
       }
 
-      // Aggregate reputation scores
+      // Aggregate reputation scores from the complete merged vow set.
+      // Each wallet starts at a baseline of 100 XP and gains/loses based on outcomes.
       const statsMap: Record<string, LeaderboardEntry> = {};
 
       const getOrCreateEntry = (addr: string): LeaderboardEntry => {

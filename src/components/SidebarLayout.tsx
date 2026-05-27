@@ -1,17 +1,5 @@
  'use client';
 
-/**
- * SidebarLayout — authenticated app shell with persistent sidebar navigation.
- *
- * Used on all auth-gated pages: /feed, /dashboard, /analytics, /leaderboard, /docs.
- * Renders differently depending on auth state:
- *   - Logged out: renders minimal header-only layout (no sidebar)
- *   - Logged in: renders full sidebar + header + main content area
- *
- * The `activePage` prop highlights the current route in the sidebar nav.
- * Uses a discriminated union type to enforce valid page keys.
- */
-
 import { useState, useEffect } from 'react';
 import { useConnect } from '@stacks/connect-react';
 import { AppConfig, UserSession } from '@stacks/connect';

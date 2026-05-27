@@ -1,5 +1,3 @@
-// Docs: types and enums for Deadlock (auto-edit)
-// Small annotation added for audit trail
  
 import { principalCV, uintCV, noneCV, someCV, stringUtf8CV, boolCV } from '@stacks/transactions';
 

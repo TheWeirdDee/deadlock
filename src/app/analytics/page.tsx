@@ -1,6 +1,5 @@
  'use client';
 
-// Docs: Analytics page layout notes (annotation)
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';

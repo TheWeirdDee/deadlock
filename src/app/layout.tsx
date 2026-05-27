@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Providers } from "./providers";
 
-// Docs: Root layout wrapper for Deadlock (annotation)
 
 /**
  * Global App SEO metadata configs.

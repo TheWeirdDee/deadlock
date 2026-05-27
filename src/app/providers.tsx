@@ -5,7 +5,7 @@ import { AppConfig, UserSession, showConnect } from '@stacks/connect';
 import { Connect } from '@stacks/connect-react';
 import { useState, useEffect } from 'react';
 
-// Docs: Providers wrapper (auth/connect) — small annotation
+ 
 
 /**
  * Providers wraps the children components with the Stacks auth Connect context
@@ -18,16 +18,20 @@ export function Providers({ children }: { children: React.ReactNode }) {
     setMounted(true);
   }, []);
 
+  // AppConfig scopes:
+  //   'store_write'   — required to save encrypted user data to Gaia storage
+  //   'publish_data'  — required to make user profile data publicly readable
   const appConfig = new AppConfig(['store_write', 'publish_data']);
   const userSession = new UserSession({ appConfig });
 
   const authOptions = {
     appDetails: {
-      name: 'DEADLOCK',
-      icon: '/logo.png',
+      name: 'DEADLOCK',       // App name shown in Hiro Wallet auth dialog
+      icon: '/logo.png',      // App icon shown in Hiro Wallet auth dialog
     },
     userSession,
     onFinish: () => {
+      // Full page reload after auth to re-initialize all session-dependent state
       window.location.reload();
     },
   };

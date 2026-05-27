@@ -1,25 +1,5 @@
  'use client';
 
-/**
- * Leaderboard Page — /leaderboard
- *
- * Aggregates all on-chain vow data into a reputation ranking for every
- * wallet that has participated in the Deadlock protocol.
- *
- * Caching strategy:
- *  - All fetched vows are stored in localStorage ('deadlock_vows_cache')
- *    as { lastSyncedId: number, vows: VowData[] }
- *  - On load: only vows with ID > lastSyncedId are re-fetched (incremental)
- *  - This reduces API calls from O(total) to O(new_since_last_visit)
- *
- * Reputation scoring (frontend only, not on-chain):
- *  - Baseline: 100 XP per wallet
- *  - +100 XP for each completed vow
- *  - -150 XP for each failed vow (can go negative)
- *  - +10 XP for each active vow (participation bonus)
- *  - Rival participants scored inversely (rival wins when creator fails)
- */
-
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SidebarLayout } from '@/components/SidebarLayout';

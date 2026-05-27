@@ -1,6 +1,5 @@
  'use client';
 
-
 import { useState } from 'react';
 import { useConnect } from '@stacks/connect-react';
 import { 
@@ -36,16 +35,22 @@ export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Convert STX input to microSTX (1 STX = 1,000,000 microSTX)
     const stakeAmount = BigInt(parseFloat(amount) * 1000000);
     const deadlineBlock = parseInt(deadline);
 
+    // Build Clarity contract call arguments.
+    // rival and causeWallet are optional — use someCV(principal) or noneCV()
+    // based on the vow type selected by the user.
     const args = [
       stringUtf8CV(title),
       stringUtf8CV(description),
       uintCV(type.toString()),
       uintCV(stakeAmount.toString()),
       uintCV(deadlineBlock.toString()),
+      // Arg 6: rival address — only for RIVAL type vows
       type === VOW_TYPES.RIVAL ? someCV(principalCV(target)) : noneCV(),
+      // Arg 7: cause wallet — only for CAUSE type vows
       type === VOW_TYPES.CAUSE ? someCV(principalCV(target)) : noneCV(),
     ];
 

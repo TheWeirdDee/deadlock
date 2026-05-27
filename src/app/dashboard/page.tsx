@@ -1,6 +1,5 @@
  'use client';
 
-// Docs: Dashboard page notes (annotation)
 
 import { useState, useEffect } from 'react';
 import { useConnect } from '@stacks/connect-react';

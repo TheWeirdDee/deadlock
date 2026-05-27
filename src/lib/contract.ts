@@ -11,8 +11,6 @@ import {
   ReadOnlyFunctionOptions 
 } from '@stacks/transactions';
 
-// Docs: contract helper annotations (auto-edit)
-// Non-functional comment for documentation tracking
 
 // -----------------------------------------------------------------------------
 // Environment validation – warn early if required variables are missing

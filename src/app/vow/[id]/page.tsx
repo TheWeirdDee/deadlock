@@ -1,21 +1,5 @@
  'use client';
 
-/**
- * Vow Detail Page — /vow/[id]
- *
- * The public page for a specific on-chain vow. Accessible without authentication.
- * Shows all vow metadata, spectator betting pool, and allows:
- *   - Spectators to place bets on success/failure
- *   - Creator to submit proof of completion
- *   - Community to vote on challenged vows
- *
- * Features:
- *   - Block-height countdown: fetches Hiro API stacks_tip_height on load
- *   - ROI Simulator: calculates projected spectator payout at slider amount
- *   - Social Proof Embed: auto-embeds GitHub commits/PRs, Twitter, YouTube
- *   - Calendar Export: Google Calendar link + downloadable .ics file
- */
-
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useConnect } from '@stacks/connect-react';
@@ -223,12 +207,18 @@ export default function VowPage() {
   const isCreator = userData?.profile?.stxAddress?.mainnet === vow.creator || userData?.profile?.stxAddress?.testnet === vow.creator;
   const isRival = vow.rival === userData?.profile?.stxAddress?.mainnet || vow.rival === userData?.profile?.stxAddress?.testnet;
 
-  // Stacks countdown and calendar calculations
+  // Block-height countdown calculations
+  // Stacks blocks average ~10 minutes each (600 seconds).
+  // blocksDelta = blocks remaining until deadline block.
+  // estimatedSeconds converts blocks to real-world time approximation.
+  // Note: this is an estimate — actual Stacks block times vary.
   const blocksDelta = Number(vow.deadlineBlock || vow['deadline-block']) - (currentBlock || 0);
   const isExpired = blocksDelta <= 0;
-  const estimatedSeconds = blocksDelta * 600; // 10 min average
+  const estimatedSeconds = blocksDelta * 600; // 600s = ~10 min per block average
   const estimatedDeadlineDate = new Date(Date.now() + estimatedSeconds * 1000);
 
+  // Calendar event times: use estimated deadline as the event start,
+  // with a 30-minute event window as a reasonable review/check-in slot.
   const utcStart = formatUTC(estimatedDeadlineDate);
   const utcEnd = formatUTC(new Date(estimatedDeadlineDate.getTime() + 30 * 60 * 1000));
   const googleCalUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`DEADLOCK Vow: ${vow.title}`)}&details=${encodeURIComponent(`Vow: ${vow.title}\nDescription: ${vow.description}\nCreator: ${vow.creator}\nStake: ${Number(vow.stakeAmount || vow['stake-amount']) / 1000000} STX`)}&dates=${utcStart}/${utcEnd}`;
@@ -284,22 +274,33 @@ export default function VowPage() {
     roiMultiplier = simAmount === 0 ? 1.0 : estimatedPayout / simAmount;
   }
 
-  // Parse social preview widgets
+  // Social proof URL parsing
+  // The proofUrl field can contain links to:
+  //   - Twitter/X posts: embedded via Twitter iframe widget
+  //   - YouTube videos: embedded via YouTube /embed/ iframe
+  //   - GitHub commits: fetched via GitHub REST API and rendered as a code card
+  //   - GitHub PRs: fetched via GitHub REST API and rendered as a PR summary
+  //   - Any other URL: shown as a plain "Visit Proof Link" button
+  // Parser runs client-side only (no server API proxy needed for public content).
   const proofUrlStr = vow.proofUrl || vow['proof-url'] || '';
   const isTwitterProof = proofUrlStr.includes('twitter.com') || proofUrlStr.includes('x.com');
   const isYoutubeProof = proofUrlStr.includes('youtube.com') || proofUrlStr.includes('youtu.be');
   
+  // Extract tweet ID from URL path: twitter.com/user/status/TWEET_ID
   let parsedTweetId = '';
   if (isTwitterProof) {
     const parts = proofUrlStr.split('/');
     parsedTweetId = parts[parts.length - 1]?.split('?')[0] || '';
   }
 
+  // Extract YouTube video ID from both youtu.be/ID and youtube.com/watch?v=ID formats
   let parsedYoutubeId = '';
   if (isYoutubeProof) {
     if (proofUrlStr.includes('youtu.be/')) {
+      // Short URL format: youtu.be/VIDEO_ID
       parsedYoutubeId = proofUrlStr.split('youtu.be/')[1]?.split('?')[0] || '';
     } else {
+      // Standard URL format: youtube.com/watch?v=VIDEO_ID
       parsedYoutubeId = proofUrlStr.split('v=')[1]?.split('&')[0] || '';
     }
   }

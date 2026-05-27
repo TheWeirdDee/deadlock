@@ -1,7 +1,5 @@
  'use client';
 
-// Docs: SidebarLayout navigation wrapper (annotation)
-
 import { useState, useEffect } from 'react';
 import { useConnect } from '@stacks/connect-react';
 import { AppConfig, UserSession } from '@stacks/connect';

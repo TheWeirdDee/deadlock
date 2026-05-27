@@ -1,5 +1,18 @@
  'use client';
 
+/**
+ * Header component — top navigation bar used across all authenticated pages.
+ *
+ * Contains:
+ *  - Logo (animated, links to landing)
+ *  - Nav links: Vows Feed, Leaderboard, Analytics, Developer Docs
+ *  - Wallet auth controls: Connect Wallet button (unauthenticated) or
+ *    Dashboard link + Logout button (authenticated)
+ *
+ * Auth state is passed via props from the parent page, which reads
+ * the Stacks UserSession on mount.
+ */
+
 import Link from 'next/link';
 
 interface HeaderProps {

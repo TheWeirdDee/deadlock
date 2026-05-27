@@ -178,6 +178,37 @@ export async function getSpectatorPool(vowId: number) {
 }
 
 /**
+ * Checks whether a wallet address has already voted on a specific challenged vow.
+ * Prevents the frontend from showing the vote buttons to addresses that have
+ * already cast a vote, avoiding failed duplicate-vote transactions.
+ *
+ * @param vowId - The vow ID to check votes on
+ * @param voterAddress - The principal address to check
+ * @returns true if the voter has already voted, false otherwise
+ */
+export async function getHasVoted(vowId: number, voterAddress: string): Promise<boolean> {
+  const options: ReadOnlyFunctionOptions = {
+    contractAddress,
+    contractName,
+    functionName: 'has-voted',
+    functionArgs: [uintCV(vowId.toString()), principalCV(voterAddress)],
+    network,
+    senderAddress: contractAddress,
+  };
+
+  const result = await withRetry(() => callReadOnlyFunction(options));
+  return Boolean(cleanCV(cvToJSON(result)));
+}
+
+// -----------------------------------------------------------------------------
+// Network switching note:
+// The `network` object is determined at module load time from the
+// NEXT_PUBLIC_NETWORK env variable. Changing the network at runtime is not
+// supported — the app must be restarted with a different .env.local value.
+// Use NEXT_PUBLIC_NETWORK=testnet for local Clarinet devnet testing.
+// -----------------------------------------------------------------------------
+
+/**
  * Exposed contract parameters config details.
  */
 export const contractDetails = {

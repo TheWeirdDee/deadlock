@@ -1,6 +1,17 @@
  'use client';
 
-// Docs: Header navigation and wallet controls (annotation)
+/**
+ * Header component — top navigation bar used across all authenticated pages.
+ *
+ * Contains:
+ *  - Logo (animated, links to landing)
+ *  - Nav links: Vows Feed, Leaderboard, Analytics, Developer Docs
+ *  - Wallet auth controls: Connect Wallet button (unauthenticated) or
+ *    Dashboard link + Logout button (authenticated)
+ *
+ * Auth state is passed via props from the parent page, which reads
+ * the Stacks UserSession on mount.
+ */
 
 import Link from 'next/link';
 
@@ -27,8 +38,8 @@ export function Header({ userData, handleLogin, handleLogout }: HeaderProps) {
         <h1 className="text-3xl font-bold tracking-tighter font-bebas text-white">DEADLOCK</h1>
       </Link>
       
-      {/* Navigation Links - Centered */}
-      <nav className="hidden md:flex items-center gap-8 text-xs font-bold tracking-widest text-gray-400">
+      {/* Navigation Links - Hidden on mobile, visible md+ */}
+      <nav aria-label="Main navigation" className="hidden md:flex items-center gap-8 text-xs font-bold tracking-widest text-gray-400">
         <Link href="/#feed" className="hover:text-white transition-colors relative py-1 group">
           VOWS FEED
           <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-white transition-all duration-300 group-hover:w-full"></span>
@@ -53,9 +64,13 @@ export function Header({ userData, handleLogin, handleLogout }: HeaderProps) {
             <Link href="/dashboard" className="text-xs bg-white/5 border border-white/10 rounded-full px-4 py-2 hover:bg-white/10 transition-colors text-white hidden md:block tracking-widest font-bold">
               DASHBOARD
             </Link>
-            <button onClick={handleLogout} className="text-xs font-bold tracking-widest uppercase hover:text-white text-gray-400 transition-colors">
-              Logout
-            </button>
+          <button
+            onClick={handleLogout}
+            aria-label="Disconnect wallet and sign out"
+            className="text-xs font-bold tracking-widest uppercase hover:text-white text-gray-400 transition-colors"
+          >
+            Logout
+          </button>
           </div>
         ) : (
           <button 

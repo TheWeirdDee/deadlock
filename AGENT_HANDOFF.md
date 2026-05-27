@@ -92,9 +92,12 @@ NEXT_PUBLIC_NETWORK=mainnet
 | Route | Purpose |
 |---|---|
 | `/` | Landing page + live vow feed with filters |
-| `/create` | 4-step vow creation wizard |
-| `/vow/[id]` | Public vow page with countdown, spectator bets, verdict panel |
-| `/profile/[address]` | Wallet's full vow history and reputation score |
+| `/feed` | Full authenticated vow feed (50 most recent on-chain vows) |
+| `/dashboard` | Auth-gated: logged-in user's own vows + pending vow status |
+| `/analytics` | Recharts visual dashboard: stake volume, vow status, vow types |
+| `/leaderboard` | Global reputation leaderboard with cached on-chain vow sync |
+| `/docs` | Developer documentation: contract ABI, SDK setup, CLI reference |
+| `/vow/[id]` | Public vow page — countdown, ROI calculator, proof embed, calendar |
 
 ---
 
@@ -107,3 +110,34 @@ NEXT_PUBLIC_NETWORK=mainnet
 - Use `openContractCall` from `@stacks/connect` for all write transactions
 - All contract reads use `callReadOnlyFunction` from `@stacks/transactions`
 - Do not store any private keys anywhere
+
+---
+
+## Current Build State (as of last handoff)
+
+### Features Implemented
+- ✅ Vow creation modal (multi-step: type → details → stake → confirm)
+- ✅ Feed page with on-chain vow fetching + pending vow reconciliation
+- ✅ Dashboard with my-vows filtering by creator address
+- ✅ Analytics with Recharts charts (stake volume by day, status pie, type bar)
+- ✅ Leaderboard with reputation scoring + localStorage cache sync
+- ✅ Docs page with contract function reference
+- ✅ Vow detail page with:
+  - Block-height countdown with Hiro API integration
+  - ROI simulator slider (spectator pool share calculation)
+  - Social proof embed (GitHub commit/PR, Twitter, YouTube)
+  - Calendar export (Google Calendar + ICS download)
+- ✅ Community adjudication: vote-on-vow, submit-proof, finalize-challenged-vow
+
+### Contract Deployed
+- Network: **Stacks Mainnet**
+- Address: set in `NEXT_PUBLIC_CONTRACT_ADDRESS`
+- Name: set in `NEXT_PUBLIC_CONTRACT_NAME` (default: `deadlock-clar`)
+
+### Known Quirks
+- `reactStrictMode: false` — required to prevent double-firing of contract reads
+- Leaderboard cache key: `deadlock_vows_cache` in localStorage
+- Pending vows cache key: `pending_vows` in localStorage
+- `@stacks/*` packages must be listed in `transpilePackages` in `next.config.js`
+- Vow field names from chain use kebab-case (`stake-amount`, `deadline-block`);
+  always normalise with `vow.stakeAmount || vow['stake-amount']` patterns

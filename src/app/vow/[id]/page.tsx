@@ -223,12 +223,18 @@ export default function VowPage() {
   const isCreator = userData?.profile?.stxAddress?.mainnet === vow.creator || userData?.profile?.stxAddress?.testnet === vow.creator;
   const isRival = vow.rival === userData?.profile?.stxAddress?.mainnet || vow.rival === userData?.profile?.stxAddress?.testnet;
 
-  // Stacks countdown and calendar calculations
+  // Block-height countdown calculations
+  // Stacks blocks average ~10 minutes each (600 seconds).
+  // blocksDelta = blocks remaining until deadline block.
+  // estimatedSeconds converts blocks to real-world time approximation.
+  // Note: this is an estimate — actual Stacks block times vary.
   const blocksDelta = Number(vow.deadlineBlock || vow['deadline-block']) - (currentBlock || 0);
   const isExpired = blocksDelta <= 0;
-  const estimatedSeconds = blocksDelta * 600; // 10 min average
+  const estimatedSeconds = blocksDelta * 600; // 600s = ~10 min per block average
   const estimatedDeadlineDate = new Date(Date.now() + estimatedSeconds * 1000);
 
+  // Calendar event times: use estimated deadline as the event start,
+  // with a 30-minute event window as a reasonable review/check-in slot.
   const utcStart = formatUTC(estimatedDeadlineDate);
   const utcEnd = formatUTC(new Date(estimatedDeadlineDate.getTime() + 30 * 60 * 1000));
   const googleCalUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`DEADLOCK Vow: ${vow.title}`)}&details=${encodeURIComponent(`Vow: ${vow.title}\nDescription: ${vow.description}\nCreator: ${vow.creator}\nStake: ${Number(vow.stakeAmount || vow['stake-amount']) / 1000000} STX`)}&dates=${utcStart}/${utcEnd}`;

@@ -154,4 +154,92 @@ Every vow page at `/vow/[id]` has:
 | Vote on challenged vow | Write | `vote-on-vow` |
 | Finalize after vote window | Write | `finalize-challenged-vow` |
 | Claim failed vow | Write | `claim-failure` |
-| Claim spectator winnings | Write | `claim-spectator-winnings` |
+
+---
+
+## Frontend Component Tree
+
+```
+src/app/
+├── layout.tsx                  → Wraps entire app in <ConnectProvider>
+├── providers.tsx               → Hiro wallet session context provider
+├── globals.css                 → Bebas Neue / Space Mono fonts, glass-card utility
+│
+├── page.tsx                    → Hero + live vow feed (landing)
+├── feed/page.tsx               → Full vow feed (auth-gated, 50 latest)
+├── dashboard/page.tsx          → My vows overview (auth-gated)
+├── analytics/page.tsx          → Recharts charts: stake, status, type breakdown
+├── leaderboard/page.tsx        → Global reputation rankings (cached sync)
+├── docs/page.tsx               → Developer documentation + contract reference
+│
+└── vow/[id]/page.tsx           → Vow detail: countdown, ROI sim, proof embed
+    ├── Block countdown         → Hiro API → stacks_tip_height → estimated time
+    ├── ROI Calculator          → Simulates spectator pool share on slider input
+    ├── Social proof embed      → GitHub commit/PR, Twitter, YouTube auto-embed
+    └── Calendar export         → Google Calendar link + ICS file download
+
+src/components/
+├── SidebarLayout.tsx           → Sidebar nav shell with active page highlight
+├── Header.tsx                  → Top bar: wallet connect/disconnect, address
+├── VowCard.tsx                 → Vow feed card: type badge, stake, status
+└── CreateVowModal.tsx          → Multi-step vow creation modal with form validation
+```
+
+---
+
+## Data Flow
+
+```
+User Action
+    │
+    ▼
+@stacks/connect (doContractCall)
+    │
+    ▼
+Hiro Wallet signs & broadcasts
+    │
+    ▼
+Stacks Mainnet (deadlock.clar)
+    │
+    ▼
+callReadOnlyFunction (contract.ts)
+    │
+    ▼
+React State (useState / useEffect)
+    │
+    ▼
+UI renders updated vow data
+```
+
+---
+
+## LocalStorage Caching Strategy
+
+The leaderboard page caches all fetched vows to minimize Hiro API calls:
+
+```
+localStorage key: 'deadlock_vows_cache'
+Shape: {
+  lastSyncedId: number,   // highest vow ID already fetched
+  vows: VowData[]         // full array of all fetched vows
+}
+```
+
+On each leaderboard load:
+1. Read cache → get `lastSyncedId`
+2. Fetch only new vows (from `lastSyncedId + 1` to `chainCount`)
+3. Merge new vows with cached vows
+4. Write updated cache back to localStorage
+5. Aggregate reputation scores from full merged set
+
+This ensures O(new_vows) API calls instead of O(total_vows) on every visit.
+
+---
+
+## Environment Variables Reference
+
+| Variable | Required | Description |
+|---|---|---|
+| `NEXT_PUBLIC_CONTRACT_ADDRESS` | ✅ | Deployed Clarity contract principal |
+| `NEXT_PUBLIC_CONTRACT_NAME` | ✅ | Contract name (default: `deadlock-clar`) |
+| `NEXT_PUBLIC_NETWORK` | ✅ | `mainnet` or `testnet` |

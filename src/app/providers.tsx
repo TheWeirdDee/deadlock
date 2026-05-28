@@ -4,9 +4,6 @@ import 'regenerator-runtime/runtime';
 import { AppConfig, UserSession, showConnect } from '@stacks/connect';
 import { Connect } from '@stacks/connect-react';
 import { useState, useEffect } from 'react';
-
- 
-
 /**
  * Providers wraps the children components with the Stacks auth Connect context
  * and handles client hydration mounting variables.

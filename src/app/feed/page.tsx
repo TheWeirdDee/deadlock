@@ -1,5 +1,19 @@
  'use client';
 
+/**
+ * Feed Page — /feed
+ *
+ * Displays the 50 most recent vows from the Deadlock smart contract.
+ * Auth-gated: redirects unauthenticated users to the landing page.
+ *
+ * Data strategy:
+ *  1. Fetch total vow count from chain (get-vow-count)
+ *  2. Iterate from newest to oldest (count-1 → max(0, count-50))
+ *  3. Reconcile with any locally-pending vows stored in localStorage
+ *     (vows submitted by the user but not yet confirmed on-chain)
+ *  4. Listen for 'vows_updated' window events to re-sync after user actions
+ */
+
 import { useState, useEffect } from 'react';
 import { useConnect } from '@stacks/connect-react';
 import { AppConfig, UserSession } from '@stacks/connect';

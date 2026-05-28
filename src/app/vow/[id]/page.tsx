@@ -1,5 +1,21 @@
  'use client';
 
+/**
+ * Vow Detail Page — /vow/[id]
+ *
+ * The public page for a specific on-chain vow. Accessible without authentication.
+ * Shows all vow metadata, spectator betting pool, and allows:
+ *   - Spectators to place bets on success/failure
+ *   - Creator to submit proof of completion
+ *   - Community to vote on challenged vows
+ *
+ * Features:
+ *   - Block-height countdown: fetches Hiro API stacks_tip_height on load
+ *   - ROI Simulator: calculates projected spectator payout at slider amount
+ *   - Social Proof Embed: auto-embeds GitHub commits/PRs, Twitter, YouTube
+ *   - Calendar Export: Google Calendar link + downloadable .ics file
+ */
+
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useConnect } from '@stacks/connect-react';

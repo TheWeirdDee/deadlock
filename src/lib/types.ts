@@ -1,5 +1,3 @@
-// Docs: types and enums for Deadlock (auto-edit)
-// Small annotation added for audit trail
  
 import { principalCV, uintCV, noneCV, someCV, stringUtf8CV, boolCV } from '@stacks/transactions';
 
@@ -66,9 +64,10 @@ export const VOW_STATUS = {
   COMPLETED: 2,
   /** Creator failed; stakes slashed according to vow-type */
   FAILED: 3,
-  /** Vow challenged; in community voting phase */
+ 
   CHALLENGED: 4,
 };
+
 
 /**
  * Represents a spectator's bet placed on a vow outcome.

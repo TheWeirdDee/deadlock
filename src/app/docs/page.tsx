@@ -13,14 +13,14 @@ export default function DocsPage() {
   const [userData, setUserData] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('overview');
 
-  const appConfig = new AppConfig(['store_write', 'publish_data']);
-  const userSession = new UserSession({ appConfig });
+  const appConfig = (typeof window !== 'undefined') ? new AppConfig(['store_write', 'publish_data']) : null;
+  const userSession = appConfig ? new UserSession({ appConfig }) : null;
 
   useEffect(() => {
-    if (userSession.isUserSignedIn()) {
+    if (userSession && userSession.isUserSignedIn()) {
       setUserData(userSession.loadUserData());
     }
-  }, []);
+  }, [userSession]);
 
   const handleLogin = () => doOpenAuth();
   const handleLogout = () => {

@@ -1,24 +1,5 @@
  'use client';
 
-/**
- * CreateVowModal — popup form for initiating a new on-chain vow.
- *
- * Contract function called: `create-vow`
- * Arguments (in order):
- *   1. title (string-utf8)
- *   2. description (string-utf8)
- *   3. vow-type (uint): 1=burn, 2=rival, 3=cause
- *   4. stake-amount (uint, in microSTX)
- *   5. deadline-block (uint, Stacks block height)
- *   6. rival (optional principal): set for RIVAL type, none otherwise
- *   7. cause-wallet (optional principal): set for CAUSE type, none otherwise
- *
- * Pending vow strategy:
- *   After broadcasting, saves the vow locally to localStorage ('pending_vows')
- *   so it appears in the feed immediately before on-chain confirmation.
- *   The feed page reconciles and removes confirmed pending vows on re-load.
- */
-
 import { useState } from 'react';
 import { useConnect } from '@stacks/connect-react';
 import { 
@@ -34,12 +15,6 @@ import { motion } from 'framer-motion';
 import { VOW_TYPES } from '@/lib/types';
 import { contractDetails, getNetwork } from '@/lib/contract';
 
-/**
- * CreateVowModal provides a multi-step popup form containing input validation
- * and hooks to invoke the `create-vow` Clarity contract call transaction.
- * @param isOpen - Flag controlling modal render status
- * @param onClose - Handler invoked to dismiss the modal
- */
 export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
   const { doContractCall } = useConnect();
   const [title, setTitle] = useState('');
@@ -54,22 +29,16 @@ export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Convert STX input to microSTX (1 STX = 1,000,000 microSTX)
     const stakeAmount = BigInt(parseFloat(amount) * 1000000);
     const deadlineBlock = parseInt(deadline);
 
-    // Build Clarity contract call arguments.
-    // rival and causeWallet are optional — use someCV(principal) or noneCV()
-    // based on the vow type selected by the user.
     const args = [
       stringUtf8CV(title),
       stringUtf8CV(description),
       uintCV(type.toString()),
       uintCV(stakeAmount.toString()),
       uintCV(deadlineBlock.toString()),
-      // Arg 6: rival address — only for RIVAL type vows
       type === VOW_TYPES.RIVAL ? someCV(principalCV(target)) : noneCV(),
-      // Arg 7: cause wallet — only for CAUSE type vows
       type === VOW_TYPES.CAUSE ? someCV(principalCV(target)) : noneCV(),
     ];
 
@@ -84,7 +53,6 @@ export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
       onFinish: (data) => {
         console.log('Transaction sent:', data);
         
-        // Save pending vow to local storage
         try {
           const appConfig = new (require('@stacks/connect').AppConfig)(['store_write', 'publish_data']);
           const userSession = new (require('@stacks/connect').UserSession)({ appConfig });
@@ -105,7 +73,6 @@ export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
           const existingPending = JSON.parse(localStorage.getItem('pending_vows') || '[]');
           localStorage.setItem('pending_vows', JSON.stringify([pendingVow, ...existingPending]));
           
-          // Dispatch a custom event to force the feed to refresh
           window.dispatchEvent(new Event('vows_updated'));
         } catch(e) {
           console.error("Failed to save pending vow", e);

@@ -1,17 +1,5 @@
  'use client';
 
-/**
- * SidebarLayout — authenticated app shell with persistent sidebar navigation.
- *
- * Used on all auth-gated pages: /feed, /dashboard, /analytics, /leaderboard, /docs.
- * Renders differently depending on auth state:
- *   - Logged out: renders minimal header-only layout (no sidebar)
- *   - Logged in: renders full sidebar + header + main content area
- *
- * The `activePage` prop highlights the current route in the sidebar nav.
- * Uses a discriminated union type to enforce valid page keys.
- */
-
 import { useState, useEffect } from 'react';
 import { useConnect } from '@stacks/connect-react';
 import { AppConfig, UserSession } from '@stacks/connect';
@@ -19,12 +7,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/Header';
 
-/**
- * SidebarLayout component containing side navigation menu for authenticated users,
- * and a standard page container wrapping core children views.
- * @param children - Active page children layout
- * @param activePage - Parameter denoting highlighted navigation button
- */
 export function SidebarLayout({ children, activePage }: { children: React.ReactNode, activePage: 'analytics' | 'dashboard' | 'docs' | 'feed' | 'leaderboard' }) {
   const { doOpenAuth } = useConnect();
   const router = useRouter();
@@ -65,13 +47,11 @@ export function SidebarLayout({ children, activePage }: { children: React.ReactN
 
   return (
     <main className="flex min-h-screen bg-black text-white font-space relative overflow-hidden">
-      {/* Background Elements */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none opacity-20 mix-blend-screen">
         <div className="absolute top-[10%] left-[20%] w-[500px] h-[500px] bg-purple-600/20 rounded-full blur-[120px] animate-pulse-slow"></div>
         <div className="absolute bottom-[10%] right-[20%] w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[150px] animate-pulse-slow" style={{ animationDelay: '2s' }}></div>
       </div>
 
-      {/* Sidebar Navigation (Only show if logged in) */}
       <aside className="hidden lg:flex flex-col w-64 border-r border-white/10 glass-card m-4 mr-0 rounded-r-none h-[calc(100vh-32px)]">
         <div className="p-6 border-b border-white/5">
           <Link href="/" className="flex items-center gap-3 group">
@@ -130,7 +110,6 @@ export function SidebarLayout({ children, activePage }: { children: React.ReactN
         </div>
       </aside>
 
-      {/* Main Content Area */}
       <div className="flex-1 p-4 lg:p-8 overflow-y-auto h-screen relative z-10">
         {children}
       </div>

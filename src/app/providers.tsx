@@ -4,10 +4,8 @@ import 'regenerator-runtime/runtime';
 import { AppConfig, UserSession, showConnect } from '@stacks/connect';
 import { Connect } from '@stacks/connect-react';
 import { useState, useEffect, useMemo } from 'react';
-/**
- * Providers wraps the children components with the Stacks auth Connect context
- * and handles client hydration mounting variables.
- */
+
+import { useState, useEffect } from 'react';
 export function Providers({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
   
@@ -20,15 +18,18 @@ export function Providers({ children }: { children: React.ReactNode }) {
   //   'publish_data'  — required to make user profile data publicly readable
   const appConfig = useMemo(() => new AppConfig(['store_write', 'publish_data']), []);
   const userSession = useMemo(() => new UserSession({ appConfig }), [appConfig]);
+=======
+  const appConfig = new AppConfig(['store_write', 'publish_data']);
+  const userSession = new UserSession({ appConfig });
+
 
   const authOptions = {
     appDetails: {
-      name: 'DEADLOCK',       // App name shown in Hiro Wallet auth dialog
-      icon: '/logo.png',      // App icon shown in Hiro Wallet auth dialog
+      name: 'DEADLOCK',
+      icon: '/logo.png',
     },
     userSession,
     onFinish: () => {
-      // Full page reload after auth to re-initialize all session-dependent state
       window.location.reload();
     },
   };

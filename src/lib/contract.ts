@@ -12,9 +12,6 @@ import {
 } from '@stacks/transactions';
 
 
-// -----------------------------------------------------------------------------
-// Environment validation – warn early if required variables are missing
-// -----------------------------------------------------------------------------
 if (!process.env.NEXT_PUBLIC_CONTRACT_ADDRESS) {
   console.error('[deadlock] Missing NEXT_PUBLIC_CONTRACT_ADDRESS env var');
 }
@@ -27,17 +24,6 @@ const network = process.env.NEXT_PUBLIC_NETWORK === 'mainnet'
   ? new StacksMainnet() 
   : new StacksTestnet();
 
-// -----------------------------------------------------------------------------
-// Helper: simple exponential back‑off retry for async calls
-// -----------------------------------------------------------------------------
-/**
- * Executes a promise-returning function with exponential backoff retries.
- * Used to handle transient Stacks API network fluctuations or rate limits.
- * @param fn - The asynchronous function execution scope
- * @param attempts - Maximum execution attempts (default 3)
- * @param baseDelay - Starting delay in milliseconds (default 500ms)
- * @returns The resolved promise value
- */
 async function withRetry<T>(fn: () => Promise<T>, attempts = 3, baseDelay = 500): Promise<T> {
   let lastError: any;
   for (let i = 0; i < attempts; i++) {
@@ -56,15 +42,8 @@ async function withRetry<T>(fn: () => Promise<T>, attempts = 3, baseDelay = 500)
 const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS!;
 const contractName = process.env.NEXT_PUBLIC_CONTRACT_NAME || 'deadlock-clar';
 
-/**
- * Returns the currently active Stacks Network configuration object.
- */
 export const getNetwork = () => network;
 
-/**
- * Recursively cleans CV JSON outputs by parsing tuples, optionals, and integers.
- * @param obj - Raw CV JSON representation
- */
 function cleanCV(obj: any): any {
   if (obj === null || obj === undefined) return null;
   
@@ -116,10 +95,6 @@ function cleanCV(obj: any): any {
   return obj;
 }
 
-/**
- * Fetches the total number of vows created on the smart contract.
- * @returns The vow count integer
- */
 export async function getVowCount(): Promise<number> {
   const options: ReadOnlyFunctionOptions = {
     contractAddress,
@@ -138,10 +113,6 @@ export async function getVowCount(): Promise<number> {
   return count;
 }
 
-/**
- * Fetches the detailed fields of a specific vow ID from the contract.
- * @param vowId - The index identifier of the vow to fetch
- */
 export async function getVow(vowId: number) {
   const args = [uintCV(Number(vowId))];
   if (process.env.NODE_ENV !== 'production') console.debug('[contract] Fetching vow', vowId);
@@ -165,10 +136,6 @@ export async function getVow(vowId: number) {
   }
 }
 
-/**
- * Fetches the spectator betting pool sums (success and failure pools) for a vow ID.
- * @param vowId - The index identifier of the vow
- */
 export async function getSpectatorPool(vowId: number) {
   const options: ReadOnlyFunctionOptions = {
     contractAddress,
@@ -188,13 +155,8 @@ export async function getSpectatorPool(vowId: number) {
 }
 
 /**
- * Checks whether a wallet address has already voted on a specific challenged vow.
- * Prevents the frontend from showing the vote buttons to addresses that have
+ * Prevents the frontend from showing vote buttons to addresses that have
  * already cast a vote, avoiding failed duplicate-vote transactions.
- *
- * @param vowId - The vow ID to check votes on
- * @param voterAddress - The principal address to check
- * @returns true if the voter has already voted, false otherwise
  */
 export async function getHasVoted(vowId: number, voterAddress: string): Promise<boolean> {
   const options: ReadOnlyFunctionOptions = {
@@ -214,17 +176,6 @@ export async function getHasVoted(vowId: number, voterAddress: string): Promise<
   }
 }
 
-// -----------------------------------------------------------------------------
-// Network switching note:
-// The `network` object is determined at module load time from the
-// NEXT_PUBLIC_NETWORK env variable. Changing the network at runtime is not
-// supported — the app must be restarted with a different .env.local value.
-// Use NEXT_PUBLIC_NETWORK=testnet for local Clarinet devnet testing.
-// -----------------------------------------------------------------------------
-
-/**
- * Exposed contract parameters config details.
- */
 export const contractDetails = {
   address: contractAddress,
   name: contractName,

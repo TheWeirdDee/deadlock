@@ -1,7 +1,6 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { VOW_TYPES, VOW_STATUS } from '@/lib/types';
-
 function getTypeColor(vowType: number): string {
   if (vowType === VOW_TYPES.BURN) return 'border-purple-400 text-purple-400';
   if (vowType === VOW_TYPES.RIVAL) return 'border-blue-400 text-blue-400';

@@ -19,22 +19,22 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const appConfig = new AppConfig(['store_write', 'publish_data']);
-  const userSession = new UserSession({ appConfig });
+  const appConfig = (typeof window !== 'undefined') ? new AppConfig(['store_write', 'publish_data']) : null;
+  const userSession = appConfig ? new UserSession({ appConfig }) : null;
 
   useEffect(() => {
     try {
-      if (userSession.isUserSignedIn()) {
+      if (userSession && userSession.isUserSignedIn()) {
         setUserData(userSession.loadUserData());
+        fetchVows();
       } else {
         router.push('/');
       }
     } catch (e) {
-      console.error('Auth session error, clearing local storage:', e);
+      if (process.env.NODE_ENV !== 'production') console.error('Auth session error, clearing local storage:', e);
       router.push('/');
     }
-    fetchVows();
-  }, [router]);
+  }, [router, userSession]);
 
   useEffect(() => {
     const handleUpdate = () => fetchVows();

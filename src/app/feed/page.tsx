@@ -37,20 +37,20 @@ export default function FeedPage() {
     try {
       setLoading(true);
       const count = await getVowCount();
-      console.log('[feed] Vow count:', count);
+      if (process.env.NODE_ENV !== 'production') console.debug('[feed] Vow count:', count);
       const fetchedVows: any[] = [];
 
       // 200ms delay between requests to respect Hiro API rate limits
       for (let i = count - 1; i >= Math.max(0, count - 50); i--) {
-        console.log('[feed] Fetching vow id', i);
+        if (process.env.NODE_ENV !== 'production') console.debug('[feed] Fetching vow id', i);
         try {
           const vow = await getVow(i);
           if (vow) {
-            console.log('[feed] Vow data', vow);
+            if (process.env.NODE_ENV !== 'production') console.debug('[feed] Vow fetched', i);
             fetchedVows.push({ ...vow, id: i });
           }
         } catch (err) {
-          console.error('[feed] Error fetching vow', i, err);
+          if (process.env.NODE_ENV !== 'production') console.error('[feed] Error fetching vow', i, err);
         }
         await new Promise(r => setTimeout(r, 200));
       }

@@ -1,6 +1,6 @@
  'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SidebarLayout } from '@/components/SidebarLayout';
 import { getVowCount, getVow } from '@/lib/contract';
@@ -141,19 +141,19 @@ export default function LeaderboardPage() {
     }
   }
 
-  const sortedLeaderboard = [...leaderboard].sort((a, b) => {
-    if (sortBy === 'reputation') {
-      return b.reputation - a.reputation;
-    } else if (sortBy === 'winRate') {
-      const getWinRate = (entry: LeaderboardEntry) => {
-        const finished = entry.completedVows + entry.failedVows;
-        return finished === 0 ? 0 : entry.completedVows / finished;
-      };
-      return getWinRate(b) - getWinRate(a);
-    } else {
+  const sortedLeaderboard = useMemo(() => {
+    return [...leaderboard].sort((a, b) => {
+      if (sortBy === 'reputation') return b.reputation - a.reputation;
+      if (sortBy === 'winRate') {
+        const getWinRate = (entry: LeaderboardEntry) => {
+          const finished = entry.completedVows + entry.failedVows;
+          return finished === 0 ? 0 : entry.completedVows / finished;
+        };
+        return getWinRate(b) - getWinRate(a);
+      }
       return b.totalStaked - a.totalStaked;
-    }
-  });
+    });
+  }, [leaderboard, sortBy]);
 
   const getRankColor = (index: number) => {
     if (index === 0) return 'from-yellow-400/20 via-amber-500/10 to-transparent border-yellow-500/40 text-yellow-400';

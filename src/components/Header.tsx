@@ -1,33 +1,13 @@
  'use client';
 
-/**
- * Header component — top navigation bar used across all authenticated pages.
- *
- * Contains:
- *  - Logo (animated, links to landing)
- *  - Nav links: Vows Feed, Leaderboard, Analytics, Developer Docs
- *  - Wallet auth controls: Connect Wallet button (unauthenticated) or
- *    Dashboard link + Logout button (authenticated)
- *
- * Auth state is passed via props from the parent page, which reads
- * the Stacks UserSession on mount.
- */
-
 import Link from 'next/link';
 
 interface HeaderProps {
-  /** User session data containing profile information and wallets */
   userData: any;
-  /** Function triggered to authenticate wallet via stacks connect */
   handleLogin: () => void;
-  /** Function triggered to sign out user and clear storage */
   handleLogout: () => void;
 }
 
-/**
- * Header navigation bar containing general layout controls, logo, links,
- * and standard Stacks wallet Connect authentication buttons.
- */
 export function Header({ userData, handleLogin, handleLogout }: HeaderProps) {
   return (
     <header className="w-full max-w-6xl flex justify-between items-center mb-8 relative z-30">
@@ -38,7 +18,6 @@ export function Header({ userData, handleLogin, handleLogout }: HeaderProps) {
         <h1 className="text-3xl font-bold tracking-tighter font-bebas text-white">DEADLOCK</h1>
       </Link>
       
-      {/* Navigation Links - Hidden on mobile, visible md+ */}
       <nav aria-label="Main navigation" className="hidden md:flex items-center gap-8 text-xs font-bold tracking-widest text-gray-400">
         <Link href="/#feed" className="hover:text-white transition-colors relative py-1 group">
           VOWS FEED

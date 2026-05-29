@@ -4,24 +4,30 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --brand-color: #8b5cf6;
+}
+
 @layer base {
-  /* Establishes the core black base theme with subtle HSL glowing radial spots */
+
   body {
     @apply bg-[#030303] text-gray-200 font-space overflow-x-hidden relative min-h-screen;
-    background-image: 
+    background-image:
       radial-gradient(circle at 15% 50%, rgba(40, 10, 80, 0.15), transparent 25%),
       radial-gradient(circle at 85% 30%, rgba(10, 40, 80, 0.15), transparent 25%);
     background-attachment: fixed;
   }
-  
-  /* Creates a futuristic dot-matrix overlay across the background */
+
   body::before {
     content: '';
     position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background-image: 
-      linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image:
+      linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
     background-size: 50px 50px;
     z-index: -1;
     pointer-events: none;
@@ -29,8 +35,12 @@
     -webkit-mask-image: radial-gradient(circle at center, black 40%, transparent 80%);
   }
 
-  /* Map headings to Bebas Neue font for an uppercase industrial aesthetic */
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-bebas tracking-wider text-white;
   }
 }
@@ -41,24 +51,33 @@
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(255,255,255,0.02);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.02);
     @apply rounded-xl transition-all duration-300;
   }
+
   .glass-card:hover {
     border: 1px solid rgba(255, 255, 255, 0.15);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(255,255,255,0.05);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(255, 255, 255, 0.05);
   }
 
-  .glow-burn { @apply shadow-glow-burn border-burn; }
-  .glow-rival { @apply shadow-glow-rival border-rival; }
-  .glow-cause { @apply shadow-glow-cause border-cause; }
+  .glow-burn {
+    @apply shadow-glow-burn border-burn;
+  }
+
+  .glow-rival {
+    @apply shadow-glow-rival border-rival;
+  }
+
+  .glow-cause {
+    @apply shadow-glow-cause border-cause;
+  }
 
   .btn-primary {
-    @apply px-8 py-3 bg-white text-black font-bold uppercase transition-all duration-300 hover:bg-gray-200 hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] active:scale-95 font-bebas rounded-md tracking-widest text-lg;
+    @apply px-8 py-3 bg-white text-black font-bold uppercase transition-all duration-300 hover:bg-gray-200 hover:shadow-[0_0_20px_rgba(255, 255, 255, 0.4)] active:scale-95 font-bebas rounded-md tracking-widest text-lg;
   }
 
   .btn-outline {
-    @apply px-8 py-3 border border-white/30 text-white font-bold uppercase transition-all duration-300 hover:bg-white/10 hover:border-white hover:shadow-[0_0_15px_rgba(255,255,255,0.2)] active:scale-95 font-bebas rounded-md tracking-widest text-lg;
+    @apply px-8 py-3 border border-white/30 text-white font-bold uppercase transition-all duration-300 hover:bg-white/10 hover:border-white hover:shadow-[0_0_15px_rgba(255, 255, 255, 0.2)] active:scale-95 font-bebas rounded-md tracking-widest text-lg;
   }
 
   .status-badge {
@@ -67,15 +86,34 @@
 }
 
 /* Custom Scrollbar */
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: #0a0a0a; }
-::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: #555; }
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0a0a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
 
 /* Animations */
 @keyframes pulse-slow {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 0.6; }
+
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+
+  50% {
+    opacity: 0.6;
+  }
 }
 
 .animate-pulse-slow {
@@ -83,13 +121,23 @@
 }
 
 @keyframes rotate-clockwise {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes rotate-counter {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(-360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(-360deg);
+  }
 }
 
 .animate-orbit-1 {
@@ -103,4 +151,3 @@
 .animate-orbit-3 {
   animation: rotate-clockwise 90s linear infinite;
 }
-

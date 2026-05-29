@@ -1,8 +1,6 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { VOW_TYPES } from '@/lib/types';
-
-
+import { VOW_TYPES, VOW_STATUS } from '@/lib/types';
 function getTypeColor(vowType: number): string {
   if (vowType === VOW_TYPES.BURN) return 'border-purple-400 text-purple-400';
   if (vowType === VOW_TYPES.RIVAL) return 'border-blue-400 text-blue-400';
@@ -22,26 +20,28 @@ function getTypeLabel(vowType: number): string {
 }
 
 export function VowCard({ vow, index }: { vow: any; index: number }) {
-  const typeLabel = getTypeLabel(vow.vowType);
+  const typeLabel = getTypeLabel(Number(vow.vowType));
+  const stake = Number(vow.stakeAmount ?? vow['stake-amount'] ?? 0) / 1_000_000;
+  const deadline = Number(vow.deadlineBlock ?? vow['deadline-block'] ?? 0);
 
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.5, delay: index * 0.1 }}
+      transition={{ duration: 0.5, delay: index * 0.08 }}
       whileHover={{ y: -5 }}
       className={`glass-card p-6 flex flex-col h-full border-t-2 border-white/10`}
     >
       <div className="flex justify-between items-start mb-4">
-        <span className={`status-badge ${getTypeColor(vow.vowType)}`} aria-label={`Vow type: ${typeLabel}`}>
+        <span className={`status-badge ${getTypeColor(Number(vow.vowType))}`} aria-label={`Vow type: ${typeLabel}`}>
           {typeLabel}
         </span>
         <span className="text-[10px] opacity-40 flex items-center gap-1 max-w-[180px]">
           <span className="truncate">VOW #{vow.id}</span>
           {vow.status === 'PENDING' && (
-            <a 
+            <a
               href={`https://explorer.hiro.so/txid/0x${String(vow.id).replace('pending-', '')}?chain=mainnet`}
-              target="_blank" 
+              target="_blank"
               rel="noopener noreferrer"
               title="View on Explorer"
               className="text-yellow-500 hover:text-yellow-400 transition-colors flex-shrink-0"
@@ -60,12 +60,12 @@ export function VowCard({ vow, index }: { vow: any; index: number }) {
       <div className="mt-auto pt-6 border-t border-white/5 space-y-4">
         <div className="flex justify-between items-center">
           <span className="text-[10px] opacity-40 uppercase">STAKE</span>
-          <span className="font-bold text-xl">{Number(vow['stake-amount']) / 1000000} STX</span>
+          <span className="font-bold text-xl">{stake} STX</span>
         </div>
-        
+
         <div className="flex justify-between items-center">
           <span className="text-[10px] opacity-40 uppercase">DEADLINE</span>
-          <span className="text-xs">BLOCK #{vow['deadline-block']}</span>
+          <span className="text-xs">BLOCK #{deadline}</span>
         </div>
 
         {vow.status === 'PENDING' ? (
@@ -75,7 +75,7 @@ export function VowCard({ vow, index }: { vow: any; index: number }) {
         ) : (
           <Link href={`/vow/${vow.id}`} className="w-full">
             <button
-              className={`w-full py-2 font-bold uppercase text-xs transition-all ${getTypeButtonClass(vow.vowType)}`}
+              className={`w-full py-2 font-bold uppercase text-xs transition-all ${getTypeButtonClass(Number(vow.vowType))}`}
               aria-label={`View vow #${vow.id}: ${vow.title}`}
             >
               VIEW CHALLENGE

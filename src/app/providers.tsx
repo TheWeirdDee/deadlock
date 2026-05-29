@@ -3,8 +3,9 @@ import 'regenerator-runtime/runtime';
 
 import { AppConfig, UserSession, showConnect } from '@stacks/connect';
 import { Connect } from '@stacks/connect-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
+import { useState, useEffect } from 'react';
 export function Providers({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
   
@@ -12,8 +13,15 @@ export function Providers({ children }: { children: React.ReactNode }) {
     setMounted(true);
   }, []);
 
+  // AppConfig scopes:
+  //   'store_write'   — required to save encrypted user data to Gaia storage
+  //   'publish_data'  — required to make user profile data publicly readable
+  const appConfig = useMemo(() => new AppConfig(['store_write', 'publish_data']), []);
+  const userSession = useMemo(() => new UserSession({ appConfig }), [appConfig]);
+=======
   const appConfig = new AppConfig(['store_write', 'publish_data']);
   const userSession = new UserSession({ appConfig });
+
 
   const authOptions = {
     appDetails: {

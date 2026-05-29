@@ -29,12 +29,29 @@ export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Convert STX input to microSTX (1 STX = 1,000,000 microSTX) and validate
+    const parsedAmount = parseFloat(amount);
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      alert('Please enter a valid stake amount');
+      return;
+    }
+    const stakeAmountNumber = Math.round(parsedAmount * 1_000_000);
+    const stakeAmount = BigInt(stakeAmountNumber);
+    const deadlineBlock = parseInt(deadline, 10);
+    if (!Number.isInteger(deadlineBlock) || deadlineBlock <= 0) {
+      alert('Please enter a valid deadline block');
+      return;
+    }
     const stakeAmount = BigInt(parseFloat(amount) * 1000000);
     const deadlineBlock = parseInt(deadline);
-
     const args = [
       stringUtf8CV(title),
       stringUtf8CV(description),
+ 
+      uintCV(Number(type)),
+      uintCV(stakeAmountNumber),
+      uintCV(deadlineBlock),
+      // Arg 6: rival address — only for RIVAL type vows
       uintCV(type.toString()),
       uintCV(stakeAmount.toString()),
       uintCV(deadlineBlock.toString()),
@@ -51,14 +68,9 @@ export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
       anchorMode: AnchorMode.Any,
       postConditionMode: PostConditionMode.Allow,
       onFinish: (data) => {
+ 
         console.log('Transaction sent:', data);
-        
         try {
-          const appConfig = new (require('@stacks/connect').AppConfig)(['store_write', 'publish_data']);
-          const userSession = new (require('@stacks/connect').UserSession)({ appConfig });
-          const userData = userSession.isUserSignedIn() ? userSession.loadUserData() : null;
-          const userAddress = userData?.profile?.stxAddress?.mainnet || userData?.profile?.stxAddress?.testnet || '';
-          
           const pendingVow = {
             id: `pending-${data.txId}`,
             title,
@@ -66,18 +78,16 @@ export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
             vowType: type,
             'stake-amount': stakeAmount.toString(),
             'deadline-block': deadlineBlock,
-            creator: userAddress,
+            creator: '',
             status: 'PENDING'
           };
-          
+
           const existingPending = JSON.parse(localStorage.getItem('pending_vows') || '[]');
           localStorage.setItem('pending_vows', JSON.stringify([pendingVow, ...existingPending]));
-          
           window.dispatchEvent(new Event('vows_updated'));
-        } catch(e) {
-          console.error("Failed to save pending vow", e);
+        } catch (e) {
+          if (process.env.NODE_ENV !== 'production') console.error('Failed to save pending vow', e);
         }
-        
         onClose();
       },
       onCancel: () => {

@@ -1,5 +1,4 @@
  
-import { principalCV, uintCV, noneCV, someCV, stringUtf8CV, boolCV } from '@stacks/transactions';
 
 export interface Vow {
   id: number;

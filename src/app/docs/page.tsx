@@ -7,24 +7,20 @@ import { SidebarLayout } from '@/components/SidebarLayout';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 
-/**
- * DocsPage component providing developer integration documentation
- * explaining Clarity contract interactions and React bindings.
- */
 export default function DocsPage() {
   const { doOpenAuth } = useConnect();
   const router = useRouter();
   const [userData, setUserData] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('overview');
 
-  const appConfig = new AppConfig(['store_write', 'publish_data']);
-  const userSession = new UserSession({ appConfig });
+  const appConfig = (typeof window !== 'undefined') ? new AppConfig(['store_write', 'publish_data']) : null;
+  const userSession = appConfig ? new UserSession({ appConfig }) : null;
 
   useEffect(() => {
-    if (userSession.isUserSignedIn()) {
+    if (userSession && userSession.isUserSignedIn()) {
       setUserData(userSession.loadUserData());
     }
-  }, []);
+  }, [userSession]);
 
   const handleLogin = () => doOpenAuth();
   const handleLogout = () => {
@@ -56,7 +52,6 @@ async function createVow() {
   return (
     <SidebarLayout activePage="docs">
       <section className="w-full max-w-6xl mt-4 mb-24 z-10 flex flex-col gap-8">
-        {/* Top Nav */}
         <nav className="w-full">
           <div className="glass-card p-4 md:p-6 sticky top-4 z-20 flex flex-col md:flex-row justify-between items-center gap-4">
             <h3 className="font-bebas text-2xl tracking-widest text-purple-400 mb-0">DEVELOPER DOCS</h3>
@@ -89,7 +84,6 @@ async function createVow() {
           </div>
         </nav>
 
-        {/* Content Area */}
         <div className="w-full">
           {activeTab === 'overview' && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">

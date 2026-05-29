@@ -106,15 +106,16 @@ export async function getVowCount(): Promise<number> {
   };
 
   console.log('[contract] Fetching vow count');
+  if (process.env.NODE_ENV !== 'production') console.debug('[contract] Fetching vow count');
   const result = await withRetry(() => callReadOnlyFunction(options), 5, 1000);
   const count = Number(cleanCV(cvToJSON(result)));
-  console.log('[contract] Vow count fetched:', count);
+  if (process.env.NODE_ENV !== 'production') console.debug('[contract] Vow count fetched:', count);
   return count;
 }
 
 export async function getVow(vowId: number) {
-  const args = [uintCV(vowId.toString())];
-  console.log('[contract] Fetching vow', args[0]);
+  const args = [uintCV(Number(vowId))];
+  if (process.env.NODE_ENV !== 'production') console.debug('[contract] Fetching vow', vowId);
   const options: ReadOnlyFunctionOptions = {
     contractAddress,
     contractName,
@@ -124,10 +125,15 @@ export async function getVow(vowId: number) {
     senderAddress: contractAddress,
   };
 
-  const result = await withRetry(() => callReadOnlyFunction(options), 5, 1000);
-  const vow = cleanCV(cvToJSON(result));
-  console.log('[contract] Vow fetched:', vow);
-  return vow;
+  try {
+    const result = await withRetry(() => callReadOnlyFunction(options), 5, 1000);
+    const vow = cleanCV(cvToJSON(result));
+    if (process.env.NODE_ENV !== 'production') console.debug('[contract] Vow fetched:', vow);
+    return vow;
+  } catch (err) {
+    // Provide a clearer error message for callers
+    throw new Error(`getVow(${vowId}) failed: ${String(err)}`);
+  }
 }
 
 export async function getSpectatorPool(vowId: number) {
@@ -135,13 +141,17 @@ export async function getSpectatorPool(vowId: number) {
     contractAddress,
     contractName,
     functionName: 'get-spectator-pool',
-    functionArgs: [uintCV(vowId.toString())],
+    functionArgs: [uintCV(Number(vowId))],
     network,
     senderAddress: contractAddress,
   };
 
-  const result = await withRetry(() => callReadOnlyFunction(options));
-  return cleanCV(cvToJSON(result));
+  try {
+    const result = await withRetry(() => callReadOnlyFunction(options));
+    return cleanCV(cvToJSON(result));
+  } catch (err) {
+    throw new Error(`getSpectatorPool(${vowId}) failed: ${String(err)}`);
+  }
 }
 
 /**
@@ -153,13 +163,17 @@ export async function getHasVoted(vowId: number, voterAddress: string): Promise<
     contractAddress,
     contractName,
     functionName: 'has-voted',
-    functionArgs: [uintCV(vowId.toString()), principalCV(voterAddress)],
+    functionArgs: [uintCV(Number(vowId)), principalCV(voterAddress)],
     network,
     senderAddress: contractAddress,
   };
 
-  const result = await withRetry(() => callReadOnlyFunction(options));
-  return Boolean(cleanCV(cvToJSON(result)));
+  try {
+    const result = await withRetry(() => callReadOnlyFunction(options));
+    return Boolean(cleanCV(cvToJSON(result)));
+  } catch (err) {
+    throw new Error(`getHasVoted(${vowId}, ${voterAddress}) failed: ${String(err)}`);
+  }
 }
 
 export const contractDetails = {

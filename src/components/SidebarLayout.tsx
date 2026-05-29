@@ -12,18 +12,18 @@ export function SidebarLayout({ children, activePage }: { children: React.ReactN
   const router = useRouter();
   const [userData, setUserData] = useState<any>(null);
 
-  const appConfig = new AppConfig(['store_write', 'publish_data']);
-  const userSession = new UserSession({ appConfig });
+  const appConfig = (typeof window !== 'undefined') ? new AppConfig(['store_write', 'publish_data']) : null;
+  const userSession = appConfig ? new UserSession({ appConfig }) : null;
 
   useEffect(() => {
-    if (userSession.isUserSignedIn()) {
+    if (userSession && userSession.isUserSignedIn()) {
       setUserData(userSession.loadUserData());
     }
   }, []);
 
   const handleLogin = () => doOpenAuth();
   const handleLogout = () => {
-    userSession.signUserOut();
+    if (userSession) userSession.signUserOut();
     router.push('/');
   };
 

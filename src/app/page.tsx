@@ -30,27 +30,16 @@ export default function Home() {
       .from('.hero-btn', { scale: 0.9, opacity: 0, duration: 0.5, stagger: 0.15, ease: 'back.out(1.7)' }, '-=0.4');
   }, { scope: container });
 
-  const appConfig = new AppConfig(['store_write', 'publish_data']);
-  const userSession = new UserSession({ appConfig });
+  const appConfig = (typeof window !== 'undefined') ? new AppConfig(['store_write', 'publish_data']) : null;
+  const userSession = appConfig ? new UserSession({ appConfig }) : null;
 
   useEffect(() => {
     try {
-      if (userSession.isUserSignedIn()) {
+      if (userSession && userSession.isUserSignedIn()) {
         setUserData(userSession.loadUserData());
       }
     } catch (e) {
-      console.error('Auth session error, clearing local storage:', e);
-      try {
-        localStorage.removeItem('blockstack-session');
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          if (key && (key.startsWith('blockstack') || key.startsWith('stacks'))) {
-            localStorage.removeItem(key);
-          }
-        }
-      } catch (err) {
-        // ignore
-      }
+      if (process.env.NODE_ENV !== 'production') console.error('Auth session error', e);
     }
     fetchVows();
   }, []);
@@ -102,7 +91,7 @@ export default function Home() {
   };
 
   const handleLogout = () => {
-    userSession.signUserOut();
+    if (userSession) userSession.signUserOut();
     window.location.reload();
   };
 

@@ -1,26 +1,6 @@
  'use client';
 
-/**
- * Leaderboard Page — /leaderboard
- *
- * Aggregates all on-chain vow data into a reputation ranking for every
- * wallet that has participated in the Deadlock protocol.
- *
- * Caching strategy:
- *  - All fetched vows are stored in localStorage ('deadlock_vows_cache')
- *    as { lastSyncedId: number, vows: VowData[] }
- *  - On load: only vows with ID > lastSyncedId are re-fetched (incremental)
- *  - This reduces API calls from O(total) to O(new_since_last_visit)
- *
- * Reputation scoring (frontend only, not on-chain):
- *  - Baseline: 100 XP per wallet
- *  - +100 XP for each completed vow
- *  - -150 XP for each failed vow (can go negative)
- *  - +10 XP for each active vow (participation bonus)
- *  - Rival participants scored inversely (rival wins when creator fails)
- */
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SidebarLayout } from '@/components/SidebarLayout';
 import { getVowCount, getVow } from '@/lib/contract';
@@ -34,7 +14,7 @@ interface LeaderboardEntry {
   completedVows: number;
   failedVows: number;
   activeVows: number;
-  totalStaked: number; // in STX
+  totalStaked: number;
 }
 
 export default function LeaderboardPage() {
@@ -52,7 +32,6 @@ export default function LeaderboardPage() {
       setLoading(true);
       const chainCount = await getVowCount();
       
-      // Load cache
       let cachedVows: any[] = [];
       let lastSyncedId = 0;
       try {
@@ -71,7 +50,6 @@ export default function LeaderboardPage() {
       const updatedVows = [...cachedVows];
       
       if (chainCount > lastSyncedId) {
-        // Show sync progress — only fetch the delta (new vows since last sync)
         setSyncProgress({ current: 0, total: chainCount - lastSyncedId });
         
         for (let i = lastSyncedId + 1; i <= chainCount; i++) {
@@ -86,7 +64,6 @@ export default function LeaderboardPage() {
           setSyncProgress(prev => ({ ...prev, current: prev.current + 1 }));
         }
 
-        // Save updated cache
         try {
           localStorage.setItem('deadlock_vows_cache', JSON.stringify({
             lastSyncedId: chainCount,
@@ -97,15 +74,13 @@ export default function LeaderboardPage() {
         }
       }
 
-      // Aggregate reputation scores from the complete merged vow set.
-      // Each wallet starts at a baseline of 100 XP and gains/loses based on outcomes.
       const statsMap: Record<string, LeaderboardEntry> = {};
 
       const getOrCreateEntry = (addr: string): LeaderboardEntry => {
         if (!statsMap[addr]) {
           statsMap[addr] = {
             address: addr,
-            reputation: 100, // baseline reputation
+            reputation: 100,
             totalVows: 0,
             completedVows: 0,
             failedVows: 0,
@@ -132,10 +107,9 @@ export default function LeaderboardPage() {
           creatorEntry.reputation = Math.max(0, creatorEntry.reputation - 150);
         } else {
           creatorEntry.activeVows += 1;
-          creatorEntry.reputation += 10; // active vow starting bonus
+          creatorEntry.reputation += 10;
         }
 
-        // Handle rival reputation if they accepted the challenge
         if (Number(vow.vowType) === VOW_TYPES.RIVAL && vow.rival) {
           const rivalEntry = getOrCreateEntry(vow.rival);
           const rivalStake = Number(vow.rivalStake || vow['rival-stake'] || 0) / 1000000;
@@ -158,9 +132,7 @@ export default function LeaderboardPage() {
         }
       }
 
-      // Convert to array and filter out empty / system entries if any
       const rawLeaderboard = Object.values(statsMap);
-
       setLeaderboard(rawLeaderboard);
     } catch (e) {
       console.error('Error loading leaderboard:', e);
@@ -169,19 +141,19 @@ export default function LeaderboardPage() {
     }
   }
 
-  const sortedLeaderboard = [...leaderboard].sort((a, b) => {
-    if (sortBy === 'reputation') {
-      return b.reputation - a.reputation;
-    } else if (sortBy === 'winRate') {
-      const getWinRate = (entry: LeaderboardEntry) => {
-        const finished = entry.completedVows + entry.failedVows;
-        return finished === 0 ? 0 : entry.completedVows / finished;
-      };
-      return getWinRate(b) - getWinRate(a);
-    } else {
+  const sortedLeaderboard = useMemo(() => {
+    return [...leaderboard].sort((a, b) => {
+      if (sortBy === 'reputation') return b.reputation - a.reputation;
+      if (sortBy === 'winRate') {
+        const getWinRate = (entry: LeaderboardEntry) => {
+          const finished = entry.completedVows + entry.failedVows;
+          return finished === 0 ? 0 : entry.completedVows / finished;
+        };
+        return getWinRate(b) - getWinRate(a);
+      }
       return b.totalStaked - a.totalStaked;
-    }
-  });
+    });
+  }, [leaderboard, sortBy]);
 
   const getRankColor = (index: number) => {
     if (index === 0) return 'from-yellow-400/20 via-amber-500/10 to-transparent border-yellow-500/40 text-yellow-400';
@@ -203,7 +175,6 @@ export default function LeaderboardPage() {
     <SidebarLayout activePage="leaderboard">
       <div className="space-y-12 max-w-6xl mt-4 mb-24 relative z-10">
         
-        {/* Header section */}
         <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-white/10 pb-6 gap-4">
           <div>
             <h2 className="text-4xl font-bold font-bebas tracking-wider mb-2">REPUTATION LEADERBOARD</h2>
@@ -212,7 +183,6 @@ export default function LeaderboardPage() {
             </p>
           </div>
 
-          {/* Sync status overlay */}
           <div className="flex items-center gap-3">
             <button 
               onClick={syncAndAggregate} 
@@ -229,7 +199,6 @@ export default function LeaderboardPage() {
           </div>
         </div>
 
-        {/* Sync Progress Indicator */}
         {loading && syncProgress.total > 0 && (
           <div className="glass-card p-6 border-purple-500/20 bg-purple-500/5">
             <div className="flex justify-between text-xs font-bold tracking-widest mb-2 font-mono">
@@ -251,7 +220,6 @@ export default function LeaderboardPage() {
           </div>
         ) : (
           <>
-            {/* Top 3 podium */}
             {!loading && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {sortedLeaderboard.slice(0, 3).map((entry, idx) => (
@@ -262,7 +230,6 @@ export default function LeaderboardPage() {
                     key={entry.address}
                     className={`bg-gradient-to-b ${getRankColor(idx)} border rounded-2xl p-6 flex flex-col justify-between h-56 shadow-[0_0_30px_rgba(255,255,255,0.02)] relative overflow-hidden`}
                   >
-                    {/* Ring highlight inside podium card */}
                     <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl pointer-events-none"></div>
 
                     <div className="flex justify-between items-start">
@@ -296,7 +263,6 @@ export default function LeaderboardPage() {
               </div>
             )}
 
-            {/* Sorting Tab Bar */}
             <div className="flex justify-between items-center border-b border-white/10 pb-4">
               <h3 className="text-xl font-bold font-bebas tracking-widest uppercase">GLOBAL RANKINGS</h3>
               <div className="flex gap-4 text-xs font-bold tracking-widest">
@@ -321,7 +287,6 @@ export default function LeaderboardPage() {
               </div>
             </div>
 
-            {/* Leaderboard Table */}
             <div className="glass-card overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse min-w-[700px]">

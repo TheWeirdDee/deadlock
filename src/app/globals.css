@@ -4,6 +4,10 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --brand-color: #8b5cf6;
+}
+
 @layer base {
 
   body {

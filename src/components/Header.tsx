@@ -30,8 +30,8 @@ interface HeaderProps {
  */
 export function Header({ userData, handleLogin, handleLogout }: HeaderProps) {
   return (
-    <header className="w-full max-w-6xl flex justify-between items-center mb-8 relative z-30">
-      <Link href="/" className="flex items-center gap-3 group">
+      <header className="w-full max-w-6xl flex justify-between items-center mb-8 relative z-30">
+        <Link href="/" aria-label="Deadlock home" className="flex items-center gap-3 group">
         <div className="w-8 h-8 bg-purple-600 rotate-45 flex items-center justify-center transition-transform duration-500 group-hover:rotate-[225deg]">
           <div className="w-4 h-4 bg-purple-200 -rotate-45"></div>
         </div>

@@ -3,9 +3,6 @@ import "./globals.css";
 import { Providers } from "./providers";
 
 
-/**
- * Global App SEO metadata configs.
- */
 export const metadata: Metadata = {
   title: "DEADLOCK | Public Accountability on Bitcoin",
   description: "Put your STX where your mouth is. Public accountability vows secured by Stacks and Bitcoin.",
@@ -14,9 +11,6 @@ export const metadata: Metadata = {
   }
 };
 
-/**
- * RootLayout wrap containing base HTML structures and provider contexts.
- */
 export default function RootLayout({
   children,
 }: Readonly<{

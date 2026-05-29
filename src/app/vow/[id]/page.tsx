@@ -56,7 +56,7 @@ export default function VowPage() {
         // ignore
       }
     }
-    fetchData();
+    if (id) fetchData();
   }, [id]);
 
   useEffect(() => {
@@ -151,7 +151,7 @@ export default function VowPage() {
       contractAddress: contractDetails.address,
       contractName: contractDetails.name,
       functionName: 'spectate',
-      functionArgs: [uintCV(id.toString()), boolCV(prediction), uintCV((BigInt(amount * 1000000)).toString())],
+      functionArgs: [uintCV(Number(id)), boolCV(prediction), uintCV(Math.round(amount * 1000000))],
       network: getNetwork(),
       anchorMode: AnchorMode.Any,
       postConditionMode: PostConditionMode.Allow,
@@ -164,7 +164,7 @@ export default function VowPage() {
       contractAddress: contractDetails.address,
       contractName: contractDetails.name,
       functionName: 'vote-on-vow',
-      functionArgs: [uintCV(id.toString()), boolCV(success)],
+      functionArgs: [uintCV(Number(id)), boolCV(success)],
       network: getNetwork(),
       anchorMode: AnchorMode.Any,
       postConditionMode: PostConditionMode.Allow,
@@ -178,7 +178,7 @@ export default function VowPage() {
       contractAddress: contractDetails.address,
       contractName: contractDetails.name,
       functionName: 'submit-completion',
-      functionArgs: [uintCV(id.toString()), stringUtf8CV(proofUrl)],
+      functionArgs: [uintCV(Number(id)), stringUtf8CV(proofUrl)],
       network: getNetwork(),
       anchorMode: AnchorMode.Any,
       postConditionMode: PostConditionMode.Allow,

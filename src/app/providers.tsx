@@ -3,7 +3,7 @@ import 'regenerator-runtime/runtime';
 
 import { AppConfig, UserSession, showConnect } from '@stacks/connect';
 import { Connect } from '@stacks/connect-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 /**
  * Providers wraps the children components with the Stacks auth Connect context
  * and handles client hydration mounting variables.
@@ -18,8 +18,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
   // AppConfig scopes:
   //   'store_write'   — required to save encrypted user data to Gaia storage
   //   'publish_data'  — required to make user profile data publicly readable
-  const appConfig = new AppConfig(['store_write', 'publish_data']);
-  const userSession = new UserSession({ appConfig });
+  const appConfig = useMemo(() => new AppConfig(['store_write', 'publish_data']), []);
+  const userSession = useMemo(() => new UserSession({ appConfig }), [appConfig]);
 
   const authOptions = {
     appDetails: {

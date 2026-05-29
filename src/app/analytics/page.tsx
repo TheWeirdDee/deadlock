@@ -1,7 +1,7 @@
  'use client';
 
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { SidebarLayout } from '@/components/SidebarLayout';
@@ -14,14 +14,14 @@ export default function AnalyticsPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('All tasks');
 
-  const stats = [
-    { label: "Total STX Locked", value: "2.8M+", change: "+41% from last month", color: "text-purple-400" },
-    { label: "Total Vows", value: "1,402", change: "+12% from last month", color: "text-blue-400" },
-    { label: "Global Success Rate", value: "68%", change: "+5% from last month", color: "text-green-400" },
-    { label: "Total Spectators", value: "45K+", change: "+20% from last month", color: "text-pink-400" },
-  ];
+  const stats = useMemo(() => [
+    { label: 'Total STX Locked', value: '2.8M+', change: '+41% from last month', color: 'text-purple-400' },
+    { label: 'Total Vows', value: '1,402', change: '+12% from last month', color: 'text-blue-400' },
+    { label: 'Global Success Rate', value: '68%', change: '+5% from last month', color: 'text-green-400' },
+    { label: 'Total Spectators', value: '45K+', change: '+20% from last month', color: 'text-pink-400' },
+  ], []);
 
-  const barData = [
+  const barData = useMemo(() => [
     { name: '01 July', vows: 40 },
     { name: '02 July', vows: 65 },
     { name: '03 July', vows: 50 },
@@ -32,9 +32,9 @@ export default function AnalyticsPage() {
     { name: '08 July', vows: 80 },
     { name: '09 July', vows: 55 },
     { name: '10 July', vows: 45 },
-  ];
+  ], []);
 
-  const lineData = [
+  const lineData = useMemo(() => [
     { name: '01', value: 400 },
     { name: '02', value: 300 },
     { name: '03', value: 550 },
@@ -42,7 +42,7 @@ export default function AnalyticsPage() {
     { name: '05', value: 700 },
     { name: '06', value: 650 },
     { name: '07', value: 900 },
-  ];
+  ], []);
 
   const recentActivity = [
     { user: "SP3D...2DV", time: "07/05/2026", amount: "500 STX", action: "VOW CREATED", status: "Pending" },

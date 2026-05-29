@@ -1,21 +1,5 @@
  'use client';
 
-/**
- * Vow Detail Page — /vow/[id]
- *
- * The public page for a specific on-chain vow. Accessible without authentication.
- * Shows all vow metadata, spectator betting pool, and allows:
- *   - Spectators to place bets on success/failure
- *   - Creator to submit proof of completion
- *   - Community to vote on challenged vows
- *
- * Features:
- *   - Block-height countdown: fetches Hiro API stacks_tip_height on load
- *   - ROI Simulator: calculates projected spectator payout at slider amount
- *   - Social Proof Embed: auto-embeds GitHub commits/PRs, Twitter, YouTube
- *   - Calendar Export: Google Calendar link + downloadable .ics file
- */
-
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useConnect } from '@stacks/connect-react';
@@ -31,7 +15,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { getVow, getSpectatorPool, contractDetails, getNetwork } from '@/lib/contract';
 import { VOW_TYPES, VOW_STATUS } from '@/lib/types';
 
-// Calendar date helper
 const formatUTC = (date: Date) => {
   return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
 };
@@ -44,18 +27,10 @@ export default function VowPage() {
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState<any>(null);
   const [proofUrl, setProofUrl] = useState('');
-  
-  // Dynamic block height states
   const [currentBlock, setCurrentBlock] = useState<number | null>(null);
-  
-  // ROI Simulator states
   const [simAmount, setSimAmount] = useState<number>(50);
   const [simPrediction, setSimPrediction] = useState<boolean>(true);
-  
-  // Calendar drop-down state
   const [showCalendarMenu, setShowCalendarMenu] = useState(false);
-
-  // Social Proof API data states
   const [githubData, setGithubData] = useState<any>(null);
   const [githubLoading, setGithubLoading] = useState<boolean>(false);
 
@@ -84,7 +59,6 @@ export default function VowPage() {
     fetchData();
   }, [id]);
 
-  // Handle parsing proof URL for GitHub integrations
   useEffect(() => {
     if (vow && vow.proofUrl) {
       parseProofUrl(vow.proofUrl);
@@ -98,7 +72,6 @@ export default function VowPage() {
       setVow(v);
       setPool(p);
 
-      // Fetch Stacks Block Height
       const networkName = process.env.NEXT_PUBLIC_NETWORK || 'mainnet';
       const apiBase = networkName === 'mainnet' ? 'https://api.mainnet.hiro.so' : 'https://api.testnet.hiro.so';
       const res = await fetch(`${apiBase}/v2/info`);
@@ -115,13 +88,12 @@ export default function VowPage() {
     }
   }
 
-  // Parse proof url and fetch GitHub API details if applicable
   const parseProofUrl = async (urlStr: string) => {
     if (!urlStr.includes('github.com')) return;
     try {
       setGithubLoading(true);
       const url = new URL(urlStr);
-      const pathParts = url.pathname.split('/').filter(Boolean); // [owner, repo, type, id]
+      const pathParts = url.pathname.split('/').filter(Boolean);
       
       if (pathParts.length >= 4) {
         const owner = pathParts[0];
@@ -223,18 +195,12 @@ export default function VowPage() {
   const isCreator = userData?.profile?.stxAddress?.mainnet === vow.creator || userData?.profile?.stxAddress?.testnet === vow.creator;
   const isRival = vow.rival === userData?.profile?.stxAddress?.mainnet || vow.rival === userData?.profile?.stxAddress?.testnet;
 
-  // Block-height countdown calculations
-  // Stacks blocks average ~10 minutes each (600 seconds).
-  // blocksDelta = blocks remaining until deadline block.
-  // estimatedSeconds converts blocks to real-world time approximation.
-  // Note: this is an estimate — actual Stacks block times vary.
+  // Stacks blocks average ~10 minutes each (600 seconds) — this is an estimate.
   const blocksDelta = Number(vow.deadlineBlock || vow['deadline-block']) - (currentBlock || 0);
   const isExpired = blocksDelta <= 0;
-  const estimatedSeconds = blocksDelta * 600; // 600s = ~10 min per block average
+  const estimatedSeconds = blocksDelta * 600;
   const estimatedDeadlineDate = new Date(Date.now() + estimatedSeconds * 1000);
 
-  // Calendar event times: use estimated deadline as the event start,
-  // with a 30-minute event window as a reasonable review/check-in slot.
   const utcStart = formatUTC(estimatedDeadlineDate);
   const utcEnd = formatUTC(new Date(estimatedDeadlineDate.getTime() + 30 * 60 * 1000));
   const googleCalUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`DEADLOCK Vow: ${vow.title}`)}&details=${encodeURIComponent(`Vow: ${vow.title}\nDescription: ${vow.description}\nCreator: ${vow.creator}\nStake: ${Number(vow.stakeAmount || vow['stake-amount']) / 1000000} STX`)}&dates=${utcStart}/${utcEnd}`;
@@ -259,12 +225,7 @@ export default function VowPage() {
     link.click();
   };
 
-  // ROI Calculator Calculations
-  // The spectator pool works as a parimutuel market:
-  //   - Winning side splits the losing side's pool proportionally by stake share
-  //   - Formula: payout = bet + (bet / newWinPool) * losePool
-  //   - roiMultiplier = totalPayout / betAmount
-  // Note: uses current pool sizes, not post-settlement values (approximation only)
+  // Parimutuel ROI: payout = bet + (bet / newWinPool) * losePool
   const successPool = Number(pool?.['success-pool'] || 0) / 1000000;
   const failurePool = Number(pool?.['failure-pool'] || 0) / 1000000;
   
@@ -273,16 +234,12 @@ export default function VowPage() {
   let netProfit = 0;
 
   if (simPrediction) {
-    // Simulating a bet on SUCCESS:
-    // Share of failure pool = (myBet / newSuccessPool) * failurePool
     const newSuccessPool = successPool + simAmount;
     const share = newSuccessPool === 0 ? 0 : (simAmount * failurePool) / newSuccessPool;
     estimatedPayout = simAmount + share;
     netProfit = share;
     roiMultiplier = simAmount === 0 ? 1.0 : estimatedPayout / simAmount;
   } else {
-    // Simulating a bet on FAILURE:
-    // Share of success pool = (myBet / newFailurePool) * successPool
     const newFailurePool = failurePool + simAmount;
     const share = newFailurePool === 0 ? 0 : (simAmount * successPool) / newFailurePool;
     estimatedPayout = simAmount + share;
@@ -290,33 +247,21 @@ export default function VowPage() {
     roiMultiplier = simAmount === 0 ? 1.0 : estimatedPayout / simAmount;
   }
 
-  // Social proof URL parsing
-  // The proofUrl field can contain links to:
-  //   - Twitter/X posts: embedded via Twitter iframe widget
-  //   - YouTube videos: embedded via YouTube /embed/ iframe
-  //   - GitHub commits: fetched via GitHub REST API and rendered as a code card
-  //   - GitHub PRs: fetched via GitHub REST API and rendered as a PR summary
-  //   - Any other URL: shown as a plain "Visit Proof Link" button
-  // Parser runs client-side only (no server API proxy needed for public content).
   const proofUrlStr = vow.proofUrl || vow['proof-url'] || '';
   const isTwitterProof = proofUrlStr.includes('twitter.com') || proofUrlStr.includes('x.com');
   const isYoutubeProof = proofUrlStr.includes('youtube.com') || proofUrlStr.includes('youtu.be');
   
-  // Extract tweet ID from URL path: twitter.com/user/status/TWEET_ID
   let parsedTweetId = '';
   if (isTwitterProof) {
     const parts = proofUrlStr.split('/');
     parsedTweetId = parts[parts.length - 1]?.split('?')[0] || '';
   }
 
-  // Extract YouTube video ID from both youtu.be/ID and youtube.com/watch?v=ID formats
   let parsedYoutubeId = '';
   if (isYoutubeProof) {
     if (proofUrlStr.includes('youtu.be/')) {
-      // Short URL format: youtu.be/VIDEO_ID
       parsedYoutubeId = proofUrlStr.split('youtu.be/')[1]?.split('?')[0] || '';
     } else {
-      // Standard URL format: youtube.com/watch?v=VIDEO_ID
       parsedYoutubeId = proofUrlStr.split('v=')[1]?.split('&')[0] || '';
     }
   }
@@ -335,7 +280,6 @@ export default function VowPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-        {/* Main Content */}
         <div className="lg:col-span-2 space-y-12">
           <section className="space-y-4">
             <div className="flex flex-wrap items-center gap-3">
@@ -354,7 +298,6 @@ export default function VowPage() {
             <p className="text-lg text-gray-400 leading-relaxed max-w-3xl font-space">{vow.description}</p>
           </section>
 
-          {/* Vow Parameters Block */}
           <section className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div className="glass-card p-5 border-white/10 bg-white/5">
               <div className="text-[10px] text-gray-500 tracking-widest font-bold uppercase mb-2">STAKE</div>
@@ -374,7 +317,6 @@ export default function VowPage() {
             </div>
           </section>
 
-          {/* Countdown & Calendar Integration Panel */}
           <section className="glass-card p-6 border-white/10 bg-white/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div className="space-y-1">
               <h3 className="text-xs text-gray-500 uppercase tracking-widest font-bold">ESTIMATED TIME TO DEADLINE</h3>
@@ -395,7 +337,6 @@ export default function VowPage() {
               )}
             </div>
 
-            {/* Add to calendar dropdown menu */}
             {!isExpired && (
               <div className="relative">
                 <button 
@@ -438,7 +379,6 @@ export default function VowPage() {
             )}
           </section>
 
-          {/* Social Proof Verification Embed Panel */}
           {proofUrlStr && (
             <section className="glass-card p-6 border-white/15 bg-white/5 space-y-6">
               <div className="border-b border-white/10 pb-3 flex justify-between items-center">
@@ -446,7 +386,6 @@ export default function VowPage() {
                 <span className="text-[10px] font-mono opacity-50 bg-white/5 border border-white/10 rounded px-2 py-0.5 select-all">{proofUrlStr}</span>
               </div>
 
-              {/* Render dynamic widgets based on url structure */}
               <div className="rounded-xl overflow-hidden bg-black/40 border border-white/5 p-4 flex flex-col justify-center">
                 {isTwitterProof && parsedTweetId ? (
                   <div className="w-full min-h-[250px] relative">
@@ -535,7 +474,6 @@ export default function VowPage() {
             </section>
           )}
 
-          {/* Adjudication Controls */}
           {Number(vow.status) === VOW_STATUS.CHALLENGED && (
             <motion.section 
               initial={{ opacity: 0, y: 20 }}
@@ -569,9 +507,7 @@ export default function VowPage() {
           )}
         </div>
 
-        {/* Sidebar Controls */}
         <div className="space-y-8">
-          {/* Spectator Pool & ROI Simulator */}
           <section className="glass-card p-6 border-white/10 bg-white/5">
             <h3 className="text-xl font-bold mb-6 border-b border-white/5 pb-2">SPECTATOR POOL</h3>
             <div className="space-y-4 mb-8">
@@ -596,7 +532,6 @@ export default function VowPage() {
               <button onClick={() => handleSpectate(false)} className="btn-outline border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white text-xs py-2">BET ON FAILURE</button>
             </div>
 
-            {/* ROI Simulator GUI */}
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <h4 className="text-xs text-gray-400 tracking-widest uppercase font-bold">ROI Calculator</h4>
@@ -616,7 +551,6 @@ export default function VowPage() {
                 </div>
               </div>
 
-              {/* Slider for simulated bet amount */}
               <div className="space-y-2">
                 <div className="flex justify-between font-mono text-xs text-gray-400">
                   <span>Simulate Bet</span>
@@ -632,7 +566,6 @@ export default function VowPage() {
                 />
               </div>
 
-              {/* simulated calculations table */}
               <div className="space-y-2.5 bg-black/40 border border-white/5 rounded-lg p-3 text-xs font-mono">
                 <div className="flex justify-between">
                   <span className="text-gray-500">ROI Multiplier:</span>
@@ -648,7 +581,6 @@ export default function VowPage() {
                 </div>
               </div>
 
-              {/* Direct execute button from calculator */}
               <button 
                 onClick={() => handleSpectate(simPrediction, simAmount)}
                 className={`w-full py-2.5 font-bold uppercase tracking-widest text-[10px] rounded-full transition-all active:scale-95 font-bebas border ${
@@ -662,7 +594,6 @@ export default function VowPage() {
             </div>
           </section>
 
-          {/* Vow Parties Panel */}
           <section className="glass-card p-6 border-white/10 bg-white/5">
             <h3 className="text-xl font-bold mb-4 border-b border-white/5 pb-2">PARTIES</h3>
             <div className="space-y-4">

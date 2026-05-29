@@ -11,10 +11,6 @@ import { SidebarLayout } from '@/components/SidebarLayout';
 import { VowCard } from '@/components/VowCard';
 import { useRouter } from 'next/navigation';
 
-/**
- * DashboardPage component providing a personalized profile summary for logged in
- * user wallets, containing active commitments, spectator bets, and win/loss rates.
- */
 export default function DashboardPage() {
   const { doOpenAuth } = useConnect();
   const router = useRouter();
@@ -31,7 +27,6 @@ export default function DashboardPage() {
       if (userSession.isUserSignedIn()) {
         setUserData(userSession.loadUserData());
       } else {
-        // Redirect to home if not logged in
         router.push('/');
       }
     } catch (e) {
@@ -51,7 +46,6 @@ export default function DashboardPage() {
     try {
       const count = await getVowCount();
       const fetchedVows: any[] = [];
-      // Fetch last 10 vows for now
       for (let i = count; i > Math.max(0, count - 10); i--) {
         const vow = await getVow(i);
         if (vow) fetchedVows.push({ ...vow, id: i });
@@ -62,14 +56,12 @@ export default function DashboardPage() {
         const stored = localStorage.getItem('pending_vows');
         if (stored) {
           const parsed = JSON.parse(stored);
-          // Only keep pending vows that don't match exactly with a fetched confirmed vow
           pendingVows = parsed.filter((pending: any) => {
             return !fetchedVows.some(
               confirmed => confirmed.title === pending.title && 
                            confirmed.description === pending.description
             );
           });
-          // Update local storage to remove confirmed ones
           if (pendingVows.length !== parsed.length) {
             localStorage.setItem('pending_vows', JSON.stringify(pendingVows));
           }
@@ -111,7 +103,6 @@ export default function DashboardPage() {
   return (
     <SidebarLayout activePage="dashboard">
       <section className="w-full max-w-6xl mt-4 mb-24 z-10 relative space-y-16">
-        {/* Header Area */}
         <div className="glass-card p-8 flex flex-col md:flex-row justify-between items-start md:items-center border-t-2 border-purple-500">
           <div>
             <h2 className="text-3xl font-bold font-bebas mb-2">WELCOME BACK.</h2>
@@ -137,7 +128,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Action Required Section (Mock Logic) */}
         {myVows.length > 0 && (
           <div>
             <div className="flex items-center gap-3 mb-6 border-b border-purple-500/30 pb-4">
@@ -156,7 +146,6 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Active Vows */}
         <div>
           <h3 className="text-2xl font-bold mb-6 border-b border-white/10 pb-4 text-white uppercase tracking-widest font-bebas">YOUR ACTIVE VOWS</h3>
           {myVows.length === 0 ? (
@@ -180,10 +169,8 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Spectator Bets Section */}
         <div>
           <h3 className="text-2xl font-bold mb-6 border-b border-white/10 pb-4 text-white uppercase tracking-widest font-bebas">YOUR SPECTATOR BETS</h3>
-          {/* Note: In the future, this array should be populated from contract reads. For now, it's empty. */}
           {(() => {
             const spectatorBets: any[] = [];
             

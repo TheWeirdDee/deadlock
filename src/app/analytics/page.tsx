@@ -10,10 +10,6 @@ import {
   AreaChart, Area
 } from 'recharts';
 
-/**
- * AnalyticsPage component displaying general metrics regarding protocol stats
- * including total STX locked, success rates, volume, and active pools charts.
- */
 export default function AnalyticsPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('All tasks');
@@ -58,7 +54,6 @@ export default function AnalyticsPage() {
 
   return (
     <SidebarLayout activePage="analytics">
-      {/* Banner */}
       <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl p-6 flex flex-col sm:flex-row items-center justify-between shadow-[0_0_30px_rgba(168,85,247,0.2)] mb-8">
         <div>
           <h2 className="text-white font-bebas text-2xl tracking-widest mb-1 flex items-center gap-2">
@@ -74,7 +69,6 @@ export default function AnalyticsPage() {
 
       <h2 className="text-2xl font-bebas tracking-widest mb-6">Overview</h2>
 
-      {/* 4 Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {stats.map((stat, idx) => (
           <div key={idx} className="glass-card p-6 flex flex-col justify-between">
@@ -90,9 +84,7 @@ export default function AnalyticsPage() {
         ))}
       </div>
 
-      {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        {/* Big Bar Chart */}
         <div className="glass-card p-6 lg:col-span-2">
           <div className="flex justify-between items-center mb-6">
             <div>
@@ -122,7 +114,6 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
-        {/* Small Line Chart */}
         <div className="glass-card p-6">
           <h3 className="text-xs text-gray-400 uppercase tracking-widest mb-1">Total Stake Volume</h3>
           <p className="text-2xl font-bebas tracking-wider text-white mb-1">20,462 STX</p>
@@ -156,7 +147,6 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {/* Recent Activity Table */}
       <div className="glass-card p-6">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bebas tracking-widest">Recent Activity</h2>

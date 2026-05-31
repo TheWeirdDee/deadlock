@@ -1,4 +1,5 @@
 /** @type {import("next").NextConfig} */
+const path = require('path');
 
 /**
  * Next.js application configuration for the Deadlock dApp.
@@ -26,6 +27,11 @@ const nextConfig = {
     '@stacks/auth',
     '@stacks/profile',
   ],
+
+  // Fix for TypeScript path case sensitivity issue on Windows
+  typescript: {
+    tsconfigPath: path.resolve('./tsconfig.json')
+  }
 };
 
 module.exports = nextConfig;

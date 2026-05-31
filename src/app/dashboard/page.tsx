@@ -83,7 +83,7 @@ export default function DashboardPage() {
   };
 
   const handleLogout = () => {
-    userSession.signUserOut();
+    userSession?.signUserOut();
     router.push('/');
   };
 

@@ -1,4 +1,5 @@
 /** @type {import("next").NextConfig} */
+const path = require('path');
 
 /**
  * Next.js application configuration for the Deadlock dApp.
@@ -26,6 +27,8 @@ const nextConfig = {
     '@stacks/auth',
     '@stacks/profile',
   ],
+
+
 };
 
-module.exports = nextConfig;
+module.exports = nextConfig;

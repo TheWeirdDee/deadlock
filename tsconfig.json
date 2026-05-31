@@ -45,6 +45,7 @@
         "name": "next"
       }
     ],
+    "baseUrl": ".",
     "paths": {
       // @/ maps to ./src/ — enables clean absolute imports like @/lib/contract
       "@/*": [

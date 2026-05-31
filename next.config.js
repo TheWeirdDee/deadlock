@@ -28,10 +28,7 @@ const nextConfig = {
     '@stacks/profile',
   ],
 
-  // Fix for TypeScript path case sensitivity issue on Windows
-  typescript: {
-    tsconfigPath: path.resolve('./tsconfig.json')
-  }
+
 };
 
 module.exports = nextConfig;

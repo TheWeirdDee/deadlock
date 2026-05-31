@@ -24,7 +24,7 @@ export default function DocsPage() {
 
   const handleLogin = () => doOpenAuth();
   const handleLogout = () => {
-    userSession.signUserOut();
+    userSession?.signUserOut();
     router.push('/');
   };
 

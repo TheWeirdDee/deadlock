@@ -1,14 +1,13 @@
 'use client';
 import 'regenerator-runtime/runtime';
 
-import { AppConfig, UserSession, showConnect } from '@stacks/connect';
+import { AppConfig, UserSession } from '@stacks/connect';
 import { Connect } from '@stacks/connect-react';
 import { useState, useEffect, useMemo } from 'react';
 
-import { useState, useEffect } from 'react';
 export function Providers({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
-  
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -18,10 +17,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
   //   'publish_data'  — required to make user profile data publicly readable
   const appConfig = useMemo(() => new AppConfig(['store_write', 'publish_data']), []);
   const userSession = useMemo(() => new UserSession({ appConfig }), [appConfig]);
-=======
-  const appConfig = new AppConfig(['store_write', 'publish_data']);
-  const userSession = new UserSession({ appConfig });
-
 
   const authOptions = {
     appDetails: {

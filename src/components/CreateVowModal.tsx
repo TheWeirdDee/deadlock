@@ -29,21 +29,19 @@ export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Convert STX input to microSTX (1 STX = 1,000,000 microSTX) and validate
-    const parsedAmount = parseFloat(amount);
-    if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      alert('Please enter a valid stake amount');
-      return;
-    }
-    const stakeAmountNumber = Math.round(parsedAmount * 1_000_000);
-    const stakeAmount = BigInt(stakeAmountNumber);
-    const deadlineBlock = parseInt(deadline, 10);
-    if (!Number.isInteger(deadlineBlock) || deadlineBlock <= 0) {
-      alert('Please enter a valid deadline block');
-      return;
-    }
-    const stakeAmount = BigInt(parseFloat(amount) * 1000000);
-    const deadlineBlock = parseInt(deadline);
+     // Convert STX input to microSTX (1 STX = 1,000,000 microSTX) and validate
+     const parsedAmount = parseFloat(amount);
+     if (isNaN(parsedAmount) || parsedAmount <= 0) {
+       alert('Please enter a valid stake amount');
+       return;
+     }
+     const stakeAmountNumber = Math.round(parsedAmount * 1_000_000);
+     const stakeAmount = BigInt(stakeAmountNumber);
+     const deadlineBlock = parseInt(deadline, 10);
+     if (!Number.isInteger(deadlineBlock) || deadlineBlock <= 0) {
+       alert('Please enter a valid deadline block');
+       return;
+     }
     const args = [
       stringUtf8CV(title),
       stringUtf8CV(description),

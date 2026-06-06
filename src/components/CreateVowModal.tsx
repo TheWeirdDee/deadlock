@@ -1,7 +1,8 @@
- 'use client';
+'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useConnect } from '@stacks/connect-react';
+import { AppConfig, UserSession } from '@stacks/connect';
 import { 
   AnchorMode, 
   PostConditionMode, 
@@ -16,46 +17,105 @@ import { VOW_TYPES } from '@/lib/types';
 import { contractDetails, getNetwork } from '@/lib/contract';
 
 export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
-  const { doContractCall } = useConnect();
+  const { doContractCall, doOpenAuth } = useConnect();
+  
+  const appConfig = typeof window !== 'undefined' ? new AppConfig(['store_write', 'publish_data']) : null;
+  const userSession = appConfig ? new UserSession({ appConfig }) : null;
+
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [type, setType] = useState(VOW_TYPES.BURN);
   const [amount, setAmount] = useState('');
-  const [deadline, setDeadline] = useState('');
   const [target, setTarget] = useState('');
+
+  const [currentBlock, setCurrentBlock] = useState<number | null>(null);
+  const [deadlineMode, setDeadlineMode] = useState<'duration' | 'custom'>('duration');
+  const [durationDays, setDurationDays] = useState('7');
+  const [customDeadline, setCustomDeadline] = useState('');
+
+  useEffect(() => {
+    if (!isOpen) return;
+    let active = true;
+    async function fetchBlockHeight() {
+      try {
+        const network = getNetwork();
+        const apiBase = network.coreApiUrl || (process.env.NEXT_PUBLIC_NETWORK === 'mainnet' ? 'https://api.mainnet.hiro.so' : 'https://api.testnet.hiro.so');
+        const res = await fetch(`${apiBase}/v2/info`);
+        if (res.ok) {
+          const info = await res.json();
+          if (info && info.stacks_tip_height && active) {
+            setCurrentBlock(info.stacks_tip_height);
+          }
+        }
+      } catch (e) {
+        console.error('Failed to fetch block height:', e);
+      }
+    }
+    fetchBlockHeight();
+    return () => {
+      active = false;
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!userSession || !userSession.isUserSignedIn()) {
+      alert('Please connect your Stacks wallet to initiate a Vow');
+      doOpenAuth();
+      return;
+    }
     
-     // Convert STX input to microSTX (1 STX = 1,000,000 microSTX) and validate
-     const parsedAmount = parseFloat(amount);
-     if (isNaN(parsedAmount) || parsedAmount <= 0) {
-       alert('Please enter a valid stake amount');
-       return;
-     }
-     const stakeAmountNumber = Math.round(parsedAmount * 1_000_000);
-     const stakeAmount = BigInt(stakeAmountNumber);
-     const deadlineBlock = parseInt(deadline, 10);
-     if (!Number.isInteger(deadlineBlock) || deadlineBlock <= 0) {
-       alert('Please enter a valid deadline block');
-       return;
-     }
-    const args = [
-      stringUtf8CV(title),
-      stringUtf8CV(description),
- 
-      uintCV(Number(type)),
-      uintCV(stakeAmountNumber),
-      uintCV(deadlineBlock),
-      // Arg 6: rival address — only for RIVAL type vows
-      uintCV(type.toString()),
-      uintCV(stakeAmount.toString()),
-      uintCV(deadlineBlock.toString()),
-      type === VOW_TYPES.RIVAL ? someCV(principalCV(target)) : noneCV(),
-      type === VOW_TYPES.CAUSE ? someCV(principalCV(target)) : noneCV(),
-    ];
+    // Convert STX input to microSTX (1 STX = 1,000,000 microSTX) and validate
+    const parsedAmount = parseFloat(amount);
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      alert('Please enter a valid stake amount');
+      return;
+    }
+    const stakeAmountNumber = Math.round(parsedAmount * 1_000_000);
+    const stakeAmount = BigInt(stakeAmountNumber);
+
+    let deadlineBlock = 0;
+    if (deadlineMode === 'duration') {
+      if (currentBlock === null) {
+        alert('Still fetching current Stacks block height. Please wait.');
+        return;
+      }
+      deadlineBlock = currentBlock + Math.round(Number(durationDays) * 144);
+    } else {
+      deadlineBlock = parseInt(customDeadline, 10);
+      if (!Number.isInteger(deadlineBlock) || deadlineBlock <= 0) {
+        alert('Please enter a valid deadline block number');
+        return;
+      }
+      if (currentBlock !== null && deadlineBlock <= currentBlock) {
+        alert(`Deadline block must be in the future (greater than current block #${currentBlock})`);
+        return;
+      }
+    }
+
+    if (type !== VOW_TYPES.BURN && !target) {
+      alert(`Please enter a valid Stacks address for the ${type === VOW_TYPES.RIVAL ? 'rival' : 'cause beneficiary'}`);
+      return;
+    }
+
+    let args;
+    try {
+      args = [
+        stringUtf8CV(title),
+        stringUtf8CV(description),
+        uintCV(Number(type)),
+        uintCV(stakeAmountNumber),
+        uintCV(deadlineBlock),
+        type === VOW_TYPES.RIVAL ? someCV(principalCV(target)) : noneCV(),
+        type === VOW_TYPES.CAUSE ? someCV(principalCV(target)) : noneCV(),
+      ];
+    } catch (error) {
+      alert('Invalid wallet address format. Please make sure the target address is a valid Stacks principal (starts with SP).');
+      return;
+    }
 
     await doContractCall({
       contractAddress: contractDetails.address,
@@ -66,7 +126,6 @@ export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
       anchorMode: AnchorMode.Any,
       postConditionMode: PostConditionMode.Allow,
       onFinish: (data) => {
- 
         console.log('Transaction sent:', data);
         try {
           const pendingVow = {
@@ -106,7 +165,7 @@ export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
       <motion.div 
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="relative w-full max-w-xl glass-card p-6 md:p-8 bg-[#111] border-white/10 max-h-[90vh] overflow-y-auto"
+        className="relative w-full max-w-2xl glass-card p-6 md:p-8 bg-[#111] border-white/10 max-h-[90vh] overflow-y-auto"
       >
         <h3 className="text-3xl md:text-4xl font-bold mb-8 uppercase">INITIATE VOW</h3>
         
@@ -158,32 +217,136 @@ export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-[10px] uppercase opacity-40">Deadline Block</label>
-              <input 
-                required
-                type="number"
-                value={deadline}
-                onChange={e => setDeadline(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 p-3 outline-none focus:border-white transition-colors"
-                placeholder="165000"
-              />
-            </div>
-            {type !== VOW_TYPES.BURN && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Deadline Selection */}
+            <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-[10px] uppercase opacity-40">
-                  {type === VOW_TYPES.RIVAL ? 'Rival Address' : 'Cause Wallet'}
-                </label>
-                <input 
-                  required
-                  value={target}
-                  onChange={e => setTarget(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 p-3 outline-none focus:border-white transition-colors"
-                  placeholder="SP..."
-                />
+                <label className="text-[10px] uppercase opacity-40 block">Deadline Mode</label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setDeadlineMode('duration')}
+                    className={`flex-1 py-2.5 text-xs font-bold border transition-all ${
+                      deadlineMode === 'duration' ? 'border-purple-500 bg-purple-500/10' : 'border-white/10 opacity-50 hover:opacity-100'
+                    }`}
+                  >
+                    DURATION (DAYS)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDeadlineMode('custom')}
+                    className={`flex-1 py-2.5 text-xs font-bold border transition-all ${
+                      deadlineMode === 'custom' ? 'border-purple-500 bg-purple-500/10' : 'border-white/10 opacity-50 hover:opacity-100'
+                    }`}
+                  >
+                    SPECIFIC BLOCK
+                  </button>
+                </div>
               </div>
-            )}
+
+              {deadlineMode === 'duration' ? (
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase opacity-40 block">Vow Duration</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { days: '1', label: '1 Day' },
+                      { days: '3', label: '3 Days' },
+                      { days: '7', label: '7 Days' },
+                      { days: '14', label: '14 Days' },
+                      { days: '30', label: '30 Days' },
+                      { days: '90', label: '90 Days' },
+                    ].map((opt) => (
+                      <button
+                        key={opt.days}
+                        type="button"
+                        onClick={() => setDurationDays(opt.days)}
+                        className={`py-2.5 text-xs font-mono font-bold border transition-all ${
+                          durationDays === opt.days ? 'border-white bg-white/10' : 'border-white/5 opacity-55 hover:opacity-100'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase opacity-40 block">Target Block Number</label>
+                  <input 
+                    required={deadlineMode === 'custom'}
+                    type="number"
+                    value={customDeadline}
+                    onChange={e => setCustomDeadline(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 p-3.5 outline-none focus:border-white transition-colors"
+                    placeholder="e.g. 165000"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Target Address & Calculation info */}
+            <div className="space-y-4">
+              {type !== VOW_TYPES.BURN ? (
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase opacity-40 block">
+                    {type === VOW_TYPES.RIVAL ? 'Rival Address' : 'Cause Wallet'}
+                  </label>
+                  <input 
+                    required
+                    value={target}
+                    onChange={e => setTarget(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 p-3 outline-none focus:border-white transition-colors text-sm font-mono"
+                    placeholder="SP..."
+                  />
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase opacity-40 block">Forfeit Destination</label>
+                  <div className="w-full bg-white/5 border border-dashed border-red-500/20 text-red-400 p-3 text-xs font-mono select-none">
+                    BURN ADDRESS: SP0000...2Q6VF78
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <label className="text-[10px] uppercase opacity-40 block">Live Calculation</label>
+                {currentBlock !== null ? (
+                  <div className="p-3 bg-white/5 border border-white/10 rounded font-mono text-xs space-y-1">
+                    <div className="flex justify-between">
+                      <span className="opacity-50">Current Block:</span>
+                      <span className="font-bold text-gray-300">#{currentBlock}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="opacity-50">Deadline Block:</span>
+                      <span className="font-bold text-purple-400">
+                        #{deadlineMode === 'duration' 
+                          ? currentBlock + Math.round(Number(durationDays) * 144) 
+                          : (parseInt(customDeadline) || '—')}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="opacity-50">Est. Date:</span>
+                      <span className="font-bold text-blue-400">
+                        {(() => {
+                          const targetBlock = deadlineMode === 'duration' 
+                            ? currentBlock + Math.round(Number(durationDays) * 144) 
+                            : parseInt(customDeadline);
+                          if (isNaN(targetBlock)) return '—';
+                          const delta = targetBlock - currentBlock;
+                          const estSecs = delta * 600;
+                          const estDate = new Date(Date.now() + estSecs * 1000);
+                          return `${estDate.toLocaleDateString()} at ${estDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+                        })()}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-3 bg-white/5 border border-white/10 rounded font-mono text-xs text-center text-gray-500 animate-pulse">
+                    Fetching current Stacks block height...
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           <div className="space-y-2">

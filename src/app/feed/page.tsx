@@ -41,7 +41,7 @@ export default function FeedPage() {
       const fetchedVows: any[] = [];
 
       // 200ms delay between requests to respect Hiro API rate limits
-      for (let i = count - 1; i >= Math.max(0, count - 50); i--) {
+      for (let i = count; i > Math.max(0, count - 50); i--) {
         if (process.env.NODE_ENV !== 'production') console.debug('[feed] Fetching vow id', i);
         try {
           const vow = await getVow(i);

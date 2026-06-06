@@ -19,6 +19,39 @@ const formatUTC = (date: Date) => {
   return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
 };
 
+function BurnAnimation() {
+  return (
+    <div className="relative w-full h-40 flex items-end justify-center overflow-hidden bg-black/40 border border-red-500/20 rounded-xl mb-6">
+      <div className="absolute inset-0 bg-gradient-to-t from-red-500/10 via-transparent to-transparent"></div>
+      <div className="flex items-end justify-center gap-1 h-32 pb-4">
+        {[...Array(12)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="w-3 rounded-full bg-gradient-to-t from-red-600 via-orange-500 to-yellow-400"
+            initial={{ height: 10 }}
+            animate={{
+              height: [15, 60 + Math.random() * 40, 15],
+              opacity: [0.7, 1, 0.4]
+            }}
+            transition={{
+              duration: 0.8 + Math.random() * 0.8,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: i * 0.05
+            }}
+            style={{
+              transformOrigin: "bottom"
+            }}
+          />
+        ))}
+      </div>
+      <div className="absolute font-bebas text-2xl tracking-widest text-red-500 font-bold bottom-6 animate-pulse">
+        STAKE REDUCED TO ASHES
+      </div>
+    </div>
+  );
+}
+
 export default function VowPage() {
   const { id } = useParams();
   const { doContractCall } = useConnect();
@@ -189,6 +222,46 @@ export default function VowPage() {
     });
   };
 
+  const handleClaimFailure = async () => {
+    await doContractCall({
+      contractAddress: contractDetails.address,
+      contractName: contractDetails.name,
+      functionName: 'claim-failure',
+      functionArgs: [uintCV(Number(id))],
+      network: getNetwork(),
+      anchorMode: AnchorMode.Any,
+      postConditionMode: PostConditionMode.Allow,
+      onFinish: () => fetchData(),
+    });
+  };
+
+  const handleFinalizeChallengedVow = async () => {
+    await doContractCall({
+      contractAddress: contractDetails.address,
+      contractName: contractDetails.name,
+      functionName: 'finalize-challenged-vow',
+      functionArgs: [uintCV(Number(id))],
+      network: getNetwork(),
+      anchorMode: AnchorMode.Any,
+      postConditionMode: PostConditionMode.Allow,
+      onFinish: () => fetchData(),
+    });
+  };
+
+  const handleAcceptRivalVow = async () => {
+    const stakeAmt = Number(vow.stakeAmount || vow['stake-amount']);
+    await doContractCall({
+      contractAddress: contractDetails.address,
+      contractName: contractDetails.name,
+      functionName: 'accept-rival-vow',
+      functionArgs: [uintCV(Number(id)), uintCV(stakeAmt)],
+      network: getNetwork(),
+      anchorMode: AnchorMode.Any,
+      postConditionMode: PostConditionMode.Allow,
+      onFinish: () => fetchData(),
+    });
+  };
+
   if (loading) return <div className="min-h-screen flex items-center justify-center font-bold text-4xl animate-pulse text-white">LOADING VOW DATA...</div>;
   if (!vow) return <div className="min-h-screen flex items-center justify-center font-bold text-4xl text-white">VOW NOT FOUND</div>;
 
@@ -198,6 +271,9 @@ export default function VowPage() {
   // Stacks blocks average ~10 minutes each (600 seconds) — this is an estimate.
   const blocksDelta = Number(vow.deadlineBlock || vow['deadline-block']) - (currentBlock || 0);
   const isExpired = blocksDelta <= 0;
+  const challengeEnd = Number(vow.challengeEndBlock || vow['challenge-end-block'] || 0);
+  const challengeBlocksDelta = challengeEnd - (currentBlock || 0);
+  const isChallengeClosed = currentBlock !== null && challengeEnd > 0 && challengeBlocksDelta <= 0;
   const estimatedSeconds = blocksDelta * 600;
   const estimatedDeadlineDate = new Date(Date.now() + estimatedSeconds * 1000);
 
@@ -474,36 +550,136 @@ export default function VowPage() {
             </section>
           )}
 
+          {/* VOW SETTLED banner */}
+          {(Number(vow.status) === VOW_STATUS.COMPLETED || Number(vow.status) === VOW_STATUS.FAILED) && (
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`glass-card p-8 border ${
+                Number(vow.status) === VOW_STATUS.COMPLETED 
+                  ? 'border-green-500/50 bg-green-500/5' 
+                  : 'border-red-500/50 bg-red-500/5'
+              }`}
+            >
+              <h3 className="text-3xl font-bold mb-4 font-bebas tracking-wide">
+                {Number(vow.status) === VOW_STATUS.COMPLETED ? 'VOW KEPT ✓' : 'VOW SLASHED ✗'}
+              </h3>
+              
+              {Number(vow.status) === VOW_STATUS.FAILED && Number(vow.vowType || vow['vow-type']) === VOW_TYPES.BURN && (
+                <BurnAnimation />
+              )}
+
+              <p className="opacity-85 text-sm leading-relaxed mb-2">
+                {Number(vow.status) === VOW_STATUS.COMPLETED ? (
+                  `This vow was successfully kept and validated on-chain. The creator's stake of ${
+                    Number(vow.stakeAmount || vow['stake-amount']) / 1000000
+                  } STX has been returned.`
+                ) : (
+                  Number(vow.vowType || vow['vow-type']) === VOW_TYPES.BURN ? (
+                    `This vow failed. The creator's stake of ${
+                      Number(vow.stakeAmount || vow['stake-amount']) / 1000000
+                    } STX was permanently burned (sent to BURN-ADDRESS).`
+                  ) : Number(vow.vowType || vow['vow-type']) === VOW_TYPES.RIVAL ? (
+                    `This vow failed. The total matching stake pool has been transferred to Rival ${vow.rival}.`
+                  ) : (
+                    `This vow failed. The creator's stake has been sent to the cause beneficiary address: ${vow.causeWallet}.`
+                  )
+                )}
+              </p>
+              {vow.settledAt || vow['settled-at'] ? (
+                <p className="text-xs font-mono text-gray-500">
+                  Settled at block #{Number(vow.settledAt || vow['settled-at'])}
+                </p>
+              ) : null}
+            </motion.section>
+          )}
+
+          {/* ACTIVE STATUS BUT EXPIRED: Trigger Settlement */}
+          {Number(vow.status) === VOW_STATUS.ACTIVE && isExpired && (
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="glass-card p-8 border-red-500/40 bg-red-950/10"
+            >
+              <h3 className="text-2xl font-bold mb-3 font-bebas text-red-500 tracking-wider">DEADLINE EXPIRED</h3>
+              <p className="mb-6 opacity-75 text-sm leading-relaxed">
+                The vow deadline block has elapsed without the creator submitting proof of completion. Any spectator or network participant can now trigger final failure settlement.
+              </p>
+              <button 
+                onClick={handleClaimFailure} 
+                className="w-full btn-primary bg-red-600 hover:bg-red-700 text-white font-bold py-3 text-xs tracking-widest"
+              >
+                TRIGGER ON-CHAIN FAILURE SETTLEMENT (SLASH STAKE)
+              </button>
+            </motion.section>
+          )}
+
+          {/* COMMUNITY ADJUDICATION PANEL */}
           {Number(vow.status) === VOW_STATUS.CHALLENGED && (
             <motion.section 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="glass-card p-8 border-yellow-500/50 bg-yellow-500/5"
+              className={`glass-card p-8 border ${
+                isChallengeClosed ? 'border-purple-500/50 bg-purple-500/5' : 'border-yellow-500/50 bg-yellow-500/5'
+              }`}
             >
-              <h3 className="text-3xl font-bold mb-4">COMMUNITY ADJUDICATION</h3>
-              <p className="mb-8 opacity-70">The creator has submitted proof of completion. Cast your vote to verify or challenge the claim.</p>
-              <div className="flex gap-4">
-                <button onClick={() => handleVote(true)} className="flex-1 btn-primary bg-green-500 hover:bg-green-600">VOTE SUCCESS</button>
-                <button onClick={() => handleVote(false)} className="flex-1 btn-primary bg-red-500 hover:bg-red-600">VOTE FAILURE</button>
-              </div>
+              <h3 className="text-3xl font-bold mb-2 font-bebas tracking-wider">
+                {isChallengeClosed ? 'ADJUDICATION CONCLUDED' : 'COMMUNITY ADJUDICATION'}
+              </h3>
+              
+              {isChallengeClosed ? (
+                <>
+                  <p className="mb-6 opacity-75 text-sm leading-relaxed">
+                    The community adjudication voting window has ended. Cast votes tally: <span className="text-green-400 font-bold">{vow.yesVotes || vow['yes-votes'] || 0} Yes</span> vs <span className="text-red-400 font-bold">{vow.noVotes || vow['no-votes'] || 0} No</span>. Anyone can now finalize the vow and distribute the escrow funds.
+                  </p>
+                  <button 
+                    onClick={handleFinalizeChallengedVow} 
+                    className="w-full btn-primary bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 text-xs tracking-widest"
+                  >
+                    FINALIZE ON-CHAIN SETTLEMENT
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="mb-4 opacity-75 text-sm leading-relaxed">
+                    The creator has submitted proof of completion. Cast your vote to verify or challenge this claim. Voting closes in <span className="text-yellow-400 font-bold font-mono">#{challengeBlocksDelta} blocks</span> (approx. {Math.max(0, Math.round((challengeBlocksDelta * 600) / 60) / 10).toFixed(1)} hrs).
+                  </p>
+                  <div className="flex gap-4">
+                    <button onClick={() => handleVote(true)} className="flex-1 btn-primary bg-green-500 hover:bg-green-600 font-bold py-2.5 text-xs">VOTE SUCCESS</button>
+                    <button onClick={() => handleVote(false)} className="flex-1 btn-primary bg-red-500 hover:bg-red-600 font-bold py-2.5 text-xs">VOTE FAILURE</button>
+                  </div>
+                </>
+              )}
             </motion.section>
           )}
 
-          {isCreator && Number(vow.status) === VOW_STATUS.ACTIVE && (
-            <section className="glass-card p-8 border-white/20">
-              <h3 className="text-3xl font-bold mb-4">SUBMIT PROOF</h3>
-              <p className="mb-8 opacity-70">Finished your challenge? Provide a URL to proof (Twitter thread, GitHub PR, etc.) to trigger the challenge window.</p>
-              <div className="flex gap-4">
-                <input 
-                  id="proof-url" 
-                  value={proofUrl}
-                  onChange={(e) => setProofUrl(e.target.value)}
-                  className="flex-grow bg-white/5 border border-white/10 p-3 outline-none focus:border-white transition-colors" 
-                  placeholder="https://..." 
-                />
-                <button onClick={handleSubmitProof} className="btn-primary">SUBMIT</button>
-              </div>
-            </section>
+          {/* ACTIVE STATUS & NOT EXPIRED: SUBMIT PROOF PANEL FOR CREATOR */}
+          {Number(vow.status) === VOW_STATUS.ACTIVE && !isExpired && (
+            isCreator ? (
+              <section className="glass-card p-8 border-white/20">
+                <h3 className="text-3xl font-bold mb-4 font-bebas tracking-wider">SUBMIT PROOF</h3>
+                <p className="mb-8 opacity-70 text-sm leading-relaxed">
+                  Finished your challenge? Provide a URL to proof (Twitter thread, GitHub PR, etc.) to trigger the community challenge window.
+                </p>
+                <div className="flex gap-4">
+                  <input 
+                    id="proof-url" 
+                    value={proofUrl}
+                    onChange={(e) => setProofUrl(e.target.value)}
+                    className="flex-grow bg-white/5 border border-white/10 p-3 outline-none focus:border-white transition-colors font-mono text-sm" 
+                    placeholder="https://..." 
+                  />
+                  <button onClick={handleSubmitProof} className="btn-primary font-bebas px-8 text-sm tracking-widest">SUBMIT</button>
+                </div>
+              </section>
+            ) : (
+              <section className="glass-card p-8 border-white/10 bg-white/5 opacity-85 text-center">
+                <h3 className="text-xl font-bold mb-2 font-bebas text-purple-400 tracking-wider">CHALLENGE IN PROGRESS</h3>
+                <p className="text-gray-400 text-sm max-w-lg mx-auto leading-relaxed">
+                  Awaiting task completion by the creator before block #{vow.deadlineBlock || vow['deadline-block']}. Spectators can bet on success or failure until the deadline or until proof is submitted.
+                </p>
+              </section>
+            )
           )}
         </div>
 
@@ -606,7 +782,9 @@ export default function VowPage() {
                   <div className="text-[8px] text-gray-500 tracking-widest uppercase font-bold mb-1">RIVAL</div>
                   <div className="text-[10px] font-mono break-all text-gray-300">{vow.rival}</div>
                   {!Number(vow.rivalStake || vow['rival-stake']) && isRival && (
-                    <button className="w-full btn-primary text-xs mt-2 py-1.5">ACCEPT CHALLENGE</button>
+                    <button onClick={handleAcceptRivalVow} className="w-full btn-primary text-xs mt-2 py-1.5 bg-blue-500 hover:bg-blue-600">
+                      ACCEPT CHALLENGE (STAKE {Number(vow.stakeAmount || vow['stake-amount']) / 1000000} STX)
+                    </button>
                   )}
                 </div>
               )}

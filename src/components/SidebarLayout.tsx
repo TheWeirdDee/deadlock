@@ -104,7 +104,13 @@ export function SidebarLayout({ children, activePage }: { children: React.ReactN
         <div className="p-4 border-t border-white/10 bg-black/20">
           <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-2 px-2">Profile</p>
           <div className="px-2">
-            <p className="text-xs font-mono text-gray-400 truncate mb-2">{userAddress}</p>
+            {userData ? (
+              <Link href={`/profile/${userAddress}`} className="text-xs font-mono text-gray-400 truncate mb-2 block hover:text-purple-400 transition-colors" title="View Profile">
+                {userAddress}
+              </Link>
+            ) : (
+              <p className="text-xs font-mono text-gray-400 truncate mb-2">{userAddress}</p>
+            )}
             <button onClick={handleLogout} className="text-xs font-bold text-red-400 hover:text-red-300 transition-colors">Log out</button>
           </div>
         </div>

@@ -180,3 +180,34 @@ export const contractDetails = {
   address: contractAddress,
   name: contractName,
 };
+
+let cachedBlockHeightPromise: Promise<number> | null = null;
+let lastFetchTime = 0;
+
+export function getCurrentBlockHeight(): Promise<number> {
+  const now = Date.now();
+  if (cachedBlockHeightPromise && (now - lastFetchTime < 60000)) {
+    return cachedBlockHeightPromise;
+  }
+  
+  lastFetchTime = now;
+  cachedBlockHeightPromise = (async () => {
+    try {
+      const network = getNetwork();
+      const apiBase = network.coreApiUrl || (process.env.NEXT_PUBLIC_NETWORK === 'mainnet' ? 'https://api.mainnet.hiro.so' : 'https://api.testnet.hiro.so');
+      const res = await fetch(`${apiBase}/v2/info`);
+      if (res.ok) {
+        const info = await res.json();
+        if (info.stacks_tip_height) {
+          return Number(info.stacks_tip_height);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to fetch block height:', e);
+    }
+    return 165000; // Safe fallback
+  })();
+  
+  return cachedBlockHeightPromise;
+}
+

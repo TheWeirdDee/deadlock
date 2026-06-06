@@ -1,6 +1,9 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { VOW_TYPES, VOW_STATUS } from '@/lib/types';
+import { getCurrentBlockHeight } from '@/lib/contract';
+
 function getTypeColor(vowType: number): string {
   if (vowType === VOW_TYPES.BURN) return 'border-purple-400 text-purple-400';
   if (vowType === VOW_TYPES.RIVAL) return 'border-blue-400 text-blue-400';
@@ -20,9 +23,30 @@ function getTypeLabel(vowType: number): string {
 }
 
 export function VowCard({ vow, index }: { vow: any; index: number }) {
-  const typeLabel = getTypeLabel(Number(vow.vowType));
+  const typeLabel = getTypeLabel(Number(vow.vowType || vow['vow-type']));
   const stake = Number(vow.stakeAmount ?? vow['stake-amount'] ?? 0) / 1_000_000;
   const deadline = Number(vow.deadlineBlock ?? vow['deadline-block'] ?? 0);
+
+  const [currentBlock, setCurrentBlock] = useState<number | null>(null);
+
+  useEffect(() => {
+    getCurrentBlockHeight().then(height => {
+      setCurrentBlock(height);
+    });
+  }, []);
+
+  const blocksDelta = deadline - (currentBlock || 0);
+  const isExpired = blocksDelta <= 0;
+  
+  const secondsLeft = blocksDelta * 600;
+  const daysLeft = Math.floor(secondsLeft / 86400);
+  const hoursLeft = Math.floor((secondsLeft % 86400) / 3600);
+  
+  const formattedCountdown = isExpired 
+    ? "EXPIRED" 
+    : daysLeft > 0 
+      ? `${daysLeft}d ${hoursLeft}h left` 
+      : `${hoursLeft}h left`;
 
   return (
     <motion.div
@@ -33,7 +57,7 @@ export function VowCard({ vow, index }: { vow: any; index: number }) {
       className={`glass-card p-6 flex flex-col h-full border-t-2 border-white/10`}
     >
       <div className="flex justify-between items-start mb-4">
-        <span className={`status-badge ${getTypeColor(Number(vow.vowType))}`} aria-label={`Vow type: ${typeLabel}`}>
+        <span className={`status-badge ${getTypeColor(Number(vow.vowType || vow['vow-type']))}`} aria-label={`Vow type: ${typeLabel}`}>
           {typeLabel}
         </span>
         <span className="text-[10px] opacity-40 flex items-center gap-1 max-w-[180px]">
@@ -65,7 +89,14 @@ export function VowCard({ vow, index }: { vow: any; index: number }) {
 
         <div className="flex justify-between items-center">
           <span className="text-[10px] opacity-40 uppercase">DEADLINE</span>
-          <span className="text-xs">BLOCK #{deadline}</span>
+          <div className="text-right">
+            <span className="text-xs block font-mono">BLOCK #{deadline}</span>
+            {currentBlock !== null && vow.status !== 'PENDING' && (
+              <span className={`text-[10px] font-bold ${isExpired ? 'text-red-500' : 'text-purple-400'}`}>
+                {formattedCountdown}
+              </span>
+            )}
+          </div>
         </div>
 
         {vow.status === 'PENDING' ? (
@@ -75,7 +106,7 @@ export function VowCard({ vow, index }: { vow: any; index: number }) {
         ) : (
           <Link href={`/vow/${vow.id}`} className="w-full">
             <button
-              className={`w-full py-2 font-bold uppercase text-xs transition-all ${getTypeButtonClass(Number(vow.vowType))}`}
+              className={`w-full py-2 font-bold uppercase text-xs transition-all ${getTypeButtonClass(Number(vow.vowType || vow['vow-type']))}`}
               aria-label={`View vow #${vow.id}: ${vow.title}`}
             >
               VIEW CHALLENGE

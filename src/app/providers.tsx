@@ -12,7 +12,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     setMounted(true);
   }, []);
 
-  // AppConfig scopes:
+  
   //   'store_write'   — required to save encrypted user data to Gaia storage
   //   'publish_data'  — required to make user profile data publicly readable
   const appConfig = useMemo(() => new AppConfig(['store_write', 'publish_data']), []);

@@ -108,7 +108,7 @@ export default function Home() {
           }
         }
       } catch (err) {
-        // ignore
+         
       }
 
       let updatedVows = [...cachedVows];

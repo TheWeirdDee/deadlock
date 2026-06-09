@@ -30,9 +30,11 @@ export function VowCard({ vow, index }: { vow: any; index: number }) {
   const [currentBlock, setCurrentBlock] = useState<number | null>(null);
 
   useEffect(() => {
-    getCurrentBlockHeight().then(height => {
-      setCurrentBlock(height);
-    });
+    let cancelled = false;
+    const refresh = () => getCurrentBlockHeight().then(h => { if (!cancelled) setCurrentBlock(h); });
+    refresh();
+    const timer = setInterval(refresh, 60_000);
+    return () => { cancelled = true; clearInterval(timer); };
   }, []);
 
   const blocksDelta = deadline - (currentBlock || 0);

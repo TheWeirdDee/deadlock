@@ -10,6 +10,7 @@ import { useGSAP } from '@gsap/react';
 import { useRef } from 'react';
 import Link from 'next/link';
 import { getVowCount, getVow, contractDetails } from '@/lib/contract';
+import { loadVowCache, saveVowCache } from '@/lib/vowCache';
 import { VOW_TYPES, VOW_STATUS } from '@/lib/types';
 import { CreateVowModal } from '@/components/CreateVowModal';
 import { Header } from '@/components/Header';
@@ -48,6 +49,9 @@ export default function Home() {
     }
     fetchVows();
     computeLiveStats();
+
+    const statsInterval = setInterval(() => { computeLiveStats(); }, 5 * 60 * 1000);
+    return () => clearInterval(statsInterval);
   }, []);
 
   useEffect(() => {
@@ -95,47 +99,26 @@ export default function Home() {
   async function computeLiveStats() {
     try {
       const count = await getVowCount();
-      
-      let cachedVows: any[] = [];
-      let lastSyncedId = 0;
-      try {
-        const stored = localStorage.getItem('deadlock_vows_cache');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed.vows) && typeof parsed.lastSyncedId === 'number') {
-            cachedVows = parsed.vows;
-            lastSyncedId = parsed.lastSyncedId;
-          }
-        }
-      } catch (err) {
-         
-      }
 
-      let updatedVows = [...cachedVows];
-      
+      const cache = loadVowCache();
+      const updatedVows = [...cache.vows];
+
+      // Show metrics from what's cached immediately
       calculateMetrics(updatedVows);
 
-      if (count > lastSyncedId) {
-        for (let i = lastSyncedId + 1; i <= count; i++) {
+      if (count > cache.lastSyncedId) {
+        for (let i = cache.lastSyncedId + 1; i <= count; i++) {
           try {
             const vow = await getVow(i);
-            if (vow) {
-              updatedVows.push({ ...vow, id: i });
-            }
+            if (vow) updatedVows.push({ ...vow, id: i });
           } catch (e) {
             console.error(`Failed to fetch vow #${i} for stats:`, e);
           }
+          // Rate-limit protection: 200ms between each read-only call
+          await new Promise(r => setTimeout(r, 200));
         }
-        
-        try {
-          localStorage.setItem('deadlock_vows_cache', JSON.stringify({
-            lastSyncedId: count,
-            vows: updatedVows
-          }));
-        } catch (err) {
-          // ignore
-        }
-        
+
+        saveVowCache({ lastSyncedId: count, vows: updatedVows });
         calculateMetrics(updatedVows);
       }
     } catch (e) {

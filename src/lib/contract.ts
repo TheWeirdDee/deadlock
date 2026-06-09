@@ -131,7 +131,7 @@ export async function getVow(vowId: number) {
     if (process.env.NODE_ENV !== 'production') console.debug('[contract] Vow fetched:', vow);
     return vow;
   } catch (err) {
-    // Provide a clearer error message for callers
+     
     throw new Error(`getVow(${vowId}) failed: ${String(err)}`);
   }
 }

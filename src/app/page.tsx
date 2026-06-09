@@ -10,6 +10,7 @@ import { useGSAP } from '@gsap/react';
 import { useRef } from 'react';
 import Link from 'next/link';
 import { getVowCount, getVow, contractDetails } from '@/lib/contract';
+import { loadVowCache, saveVowCache } from '@/lib/vowCache';
 import { VOW_TYPES, VOW_STATUS } from '@/lib/types';
 import { loadVowCache, saveVowCache } from '@/lib/vowCache';
 import { CreateVowModal } from '@/components/CreateVowModal';
@@ -24,6 +25,11 @@ export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [stats, setStats] = useState({ lockedSTX: 0, activeVowsCount: 0, totalVotesCast: 0 });
   const container = useRef<HTMLDivElement>(null);
+  const [stats, setStats] = useState({
+    lockedSTX: 0,
+    activeVowsCount: 0,
+    totalVotesCast: 0,
+  });
 
   useGSAP(() => {
     const tl = gsap.timeline();
@@ -45,6 +51,7 @@ export default function Home() {
     }
     fetchVows();
     computeLiveStats();
+
     const statsInterval = setInterval(() => { computeLiveStats(); }, 5 * 60 * 1000);
     return () => clearInterval(statsInterval);
   }, []);
@@ -91,6 +98,17 @@ export default function Home() {
     }
   }
 
+  async function computeLiveStats() {
+    try {
+      const count = await getVowCount();
+
+      const cache = loadVowCache();
+      const updatedVows = [...cache.vows];
+
+      // Show metrics from what's cached immediately
+      calculateMetrics(updatedVows);
+
+ 
   function calculateMetrics(vowsList: any[]) {
     let escrowSTX = 0, active = 0, votes = 0;
     for (const v of vowsList) {
@@ -116,6 +134,12 @@ export default function Home() {
           try {
             const vow = await getVow(i);
             if (vow) updatedVows.push({ ...vow, id: i });
+          } catch (e) {
+            console.error(`Failed to fetch vow #${i} for stats:`, e);
+          }
+          // Rate-limit protection: 200ms between each read-only call
+          await new Promise(r => setTimeout(r, 200));
+        }
           } catch {}
           await new Promise(r => setTimeout(r, 200));
         }
@@ -126,7 +150,31 @@ export default function Home() {
       console.error('Failed to compute stats:', e);
     }
   }
+  function calculateMetrics(vowsList: any[]) {
+    let escrowSTX = 0;
+    let active = 0;
+    let votes = 0;
 
+    for (const v of vowsList) {
+      const statusVal = Number(v.status || v['status']);
+      const stakeVal = Number(v.stakeAmount || v['stake-amount'] || 0) / 1000000;
+      const rivalStakeVal = Number(v.rivalStake || v['rival-stake'] || 0) / 1000000;
+      const yesVotesVal = Number(v.yesVotes || v['yes-votes'] || 0);
+      const noVotesVal = Number(v.noVotes || v['no-votes'] || 0);
+
+      if (statusVal === VOW_STATUS.ACTIVE || statusVal === VOW_STATUS.CHALLENGED) {
+        escrowSTX += stakeVal + rivalStakeVal;
+        active++;
+      }
+      votes += yesVotesVal + noVotesVal;
+    }
+
+    setStats({
+      lockedSTX: escrowSTX,
+      activeVowsCount: active,
+      totalVotesCast: votes,
+    });
+  }
   const handleLogin = () => {
     doOpenAuth();
   };
@@ -218,6 +266,8 @@ export default function Home() {
             <div id="analytics" className="lg:col-span-7 grid grid-cols-3 gap-6 text-left">
               <div>
                 <h4 className="text-3xl sm:text-5xl font-bold font-bebas text-white tracking-wider mb-1">
+                  {stats.lockedSTX > 0 ? stats.lockedSTX.toFixed(1) : "2.5M"}
+                  <span className="text-purple-500 font-bebas">{stats.lockedSTX > 0 ? " STX" : "+"}</span>
                   {stats.lockedSTX > 0 ? stats.lockedSTX.toFixed(1) : '2.5M'}
                   <span className="text-purple-500 font-bebas">{stats.lockedSTX > 0 ? ' STX' : '+'}</span>
                 </h4>
@@ -226,6 +276,8 @@ export default function Home() {
 
               <div className="border-l border-white/10 pl-6">
                 <h4 className="text-3xl sm:text-5xl font-bold font-bebas text-white tracking-wider mb-1">
+                  {stats.lockedSTX > 0 ? stats.activeVowsCount : "1.2K"}
+                  <span className="text-blue-400 font-bebas">{stats.lockedSTX > 0 ? "" : "+"}</span>
                   {stats.lockedSTX > 0 ? stats.activeVowsCount : '1.2K'}
                   <span className="text-blue-400 font-bebas">{stats.lockedSTX > 0 ? '' : '+'}</span>
                 </h4>
@@ -234,6 +286,8 @@ export default function Home() {
 
               <div className="border-l border-white/10 pl-6">
                 <h4 className="text-3xl sm:text-5xl font-bold font-bebas text-white tracking-wider mb-1">
+                  {stats.lockedSTX > 0 ? stats.totalVotesCast : "45K"}
+                  <span className="text-green-400 font-bebas">{stats.lockedSTX > 0 ? "" : "+"}</span>
                   {stats.lockedSTX > 0 ? stats.totalVotesCast : '45K'}
                   <span className="text-green-400 font-bebas">{stats.lockedSTX > 0 ? '' : '+'}</span>
                 </h4>

@@ -20,10 +20,12 @@ export default function FeedPage() {
   const userSession = new UserSession({ appConfig });
 
   useEffect(() => {
-    if (userSession.isUserSignedIn()) {
-      setUserData(userSession.loadUserData());
-    } else {
-      router.push('/');
+    try {
+      if (userSession.isUserSignedIn()) {
+        setUserData(userSession.loadUserData());
+      }
+    } catch (e) {
+      console.error("Session load error", e);
     }
     fetchVows();
   }, [router]);
@@ -74,6 +76,8 @@ export default function FeedPage() {
             const vowWithId = { ...vow, id: i };
             freshVows.push(vowWithId);
             patchVowInCache(vowWithId);
+ 
+            // Stream results into the UI as each arrives
             setVows(mergePending([...freshVows]));
           }
         } catch (err) {
@@ -88,9 +92,6 @@ export default function FeedPage() {
     }
   }
 
-  if (!userData) {
-    return null;
-  }
 
   return (
     <SidebarLayout activePage="feed">

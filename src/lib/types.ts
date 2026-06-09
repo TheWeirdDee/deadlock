@@ -41,7 +41,7 @@ export const VOW_STATUS = {
 
 export interface SpectatorBet {
   spectator: string;
-  /** Amount of STX wagered (in microSTX) */
+   
   amount: bigint;
   /** true = bet on creator success; false = bet on creator failure */
   prediction: boolean;

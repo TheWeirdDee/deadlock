@@ -12,7 +12,7 @@ import {
   stringUtf8CV 
 } from '@stacks/transactions';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getVow, getSpectatorPool, contractDetails, getNetwork } from '@/lib/contract';
+import { getVow, getSpectatorPool, contractDetails, getNetwork, getCurrentBlockHeight } from '@/lib/contract';
 import { VOW_TYPES, VOW_STATUS } from '@/lib/types';
 
 const formatUTC = (date: Date) => {
@@ -98,6 +98,14 @@ export default function VowPage() {
     }
   }, [vow]);
 
+  // Live countdown — refresh block height every 60s
+  useEffect(() => {
+    if (!id) return;
+    const refresh = () => getCurrentBlockHeight().then(h => setCurrentBlock(h));
+    const timer = setInterval(refresh, 60_000);
+    return () => clearInterval(timer);
+  }, [id]);
+
   async function fetchData() {
     try {
       const v = await getVow(Number(id));
@@ -105,15 +113,8 @@ export default function VowPage() {
       setVow(v);
       setPool(p);
 
-      const networkName = process.env.NEXT_PUBLIC_NETWORK || 'mainnet';
-      const apiBase = networkName === 'mainnet' ? 'https://api.mainnet.hiro.so' : 'https://api.testnet.hiro.so';
-      const res = await fetch(`${apiBase}/v2/info`);
-      if (res.ok) {
-        const info = await res.json();
-        if (info.stacks_tip_height) {
-          setCurrentBlock(info.stacks_tip_height);
-        }
-      }
+      const height = await getCurrentBlockHeight();
+      setCurrentBlock(height);
     } catch (e) {
       console.error('Error fetching data:', e);
     } finally {

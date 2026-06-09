@@ -5,6 +5,7 @@ import { useConnect } from '@stacks/connect-react';
 import { AppConfig, UserSession } from '@stacks/connect';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getVowCount, getVow } from '@/lib/contract';
+import { loadVowCache, patchVowInCache } from '@/lib/vowCache';
 import { VowCard } from '@/components/VowCard';
 import { SidebarLayout } from '@/components/SidebarLayout';
 import { useRouter } from 'next/navigation';
@@ -35,48 +36,54 @@ export default function FeedPage() {
     return () => window.removeEventListener('vows_updated', handleUpdate);
   }, []);
 
-  async function fetchVows() {
+  function mergePending(onchain: any[]): any[] {
+    let pending: any[] = [];
     try {
-      setLoading(true);
-      const count = await getVowCount();
-      if (process.env.NODE_ENV !== 'production') console.debug('[feed] Vow count:', count);
-      const fetchedVows: any[] = [];
+      const stored = localStorage.getItem('pending_vows');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        const filtered = parsed.filter((p: any) =>
+          !onchain.some(v => v.title === p.title && v.description === p.description)
+        );
+        if (filtered.length !== parsed.length) {
+          localStorage.setItem('pending_vows', JSON.stringify(filtered));
+        }
+        pending = filtered;
+      }
+    } catch {}
+    return [...pending, ...onchain];
+  }
 
-      // 200ms delay between requests to respect Hiro API rate limits
+  async function fetchVows() {
+    // Warm-start: show cached vows immediately so the page isn't blank
+    const cache = loadVowCache();
+    const cached50 = cache.vows.slice().reverse().slice(0, 50);
+    if (cached50.length > 0) {
+      setVows(mergePending(cached50));
+      setLoading(false);
+    }
+
+    try {
+      setLoading(cached50.length === 0);
+      const count = await getVowCount();
+      const freshVows: any[] = [];
+
+      // Staggered fetches — 200ms between each to respect Hiro rate limits
       for (let i = count; i > Math.max(0, count - 50); i--) {
-        if (process.env.NODE_ENV !== 'production') console.debug('[feed] Fetching vow id', i);
         try {
           const vow = await getVow(i);
           if (vow) {
-            if (process.env.NODE_ENV !== 'production') console.debug('[feed] Vow fetched', i);
-            fetchedVows.push({ ...vow, id: i });
+            const vowWithId = { ...vow, id: i };
+            freshVows.push(vowWithId);
+            patchVowInCache(vowWithId);
+            // Stream results into the UI as each arrives
+            setVows(mergePending([...freshVows]));
           }
         } catch (err) {
           if (process.env.NODE_ENV !== 'production') console.error('[feed] Error fetching vow', i, err);
         }
         await new Promise(r => setTimeout(r, 200));
       }
-      
-      let pendingVows = [];
-      try {
-        const stored = localStorage.getItem('pending_vows');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          pendingVows = parsed.filter((pending: any) => {
-            return !fetchedVows.some(
-              confirmed => confirmed.title === pending.title && 
-                           confirmed.description === pending.description
-            );
-          });
-          if (pendingVows.length !== parsed.length) {
-            localStorage.setItem('pending_vows', JSON.stringify(pendingVows));
-          }
-        }
-      } catch (err) {
-        console.error("Error reading pending vows", err);
-      }
-      
-      setVows([...pendingVows, ...fetchedVows]);
     } catch (e) {
       console.error(e);
     } finally {

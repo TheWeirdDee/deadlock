@@ -76,6 +76,7 @@ export default function FeedPage() {
             const vowWithId = { ...vow, id: i };
             freshVows.push(vowWithId);
             patchVowInCache(vowWithId);
+ 
             // Stream results into the UI as each arrives
             setVows(mergePending([...freshVows]));
           }

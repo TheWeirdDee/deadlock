@@ -205,7 +205,10 @@ export function getCurrentBlockHeight(): Promise<number> {
     } catch (e) {
       console.error('Failed to fetch block height:', e);
     }
-    return 165000; // Safe fallback
+    // Invalidate so the next caller retries rather than getting a cached failure
+    cachedBlockHeightPromise = null;
+    lastFetchTime = 0;
+    return 165000;
   })();
   
   return cachedBlockHeightPromise;

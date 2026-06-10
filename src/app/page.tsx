@@ -102,7 +102,6 @@ export default function Home() {
 
       calculateMetrics(updatedVows);
 
-      // If the chain has advanced, fetch only the missing vow ids
       if (count > cache.lastSyncedId) {
         for (let i = cache.lastSyncedId + 1; i <= count; i++) {
           try {

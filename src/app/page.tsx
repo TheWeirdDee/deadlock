@@ -106,7 +106,7 @@ export default function Home() {
   async function computeLiveStats() {
     try {
       const count = await getVowCount();
- 
+
       const cache = loadVowCache();
       const updatedVows = [...cache.vows];
 
@@ -114,10 +114,6 @@ export default function Home() {
       calculateMetrics(updatedVows);
 
       // If the chain has advanced, fetch only the missing vow ids
- 
-      const cache = loadVowCache();
-      const updatedVows = [...cache.vows];
-      calculateMetrics(updatedVows);
       if (count > cache.lastSyncedId) {
         for (let i = cache.lastSyncedId + 1; i <= count; i++) {
           try {
@@ -129,8 +125,7 @@ export default function Home() {
           // Rate-limit protection: 200ms between each read-only call
           await new Promise(r => setTimeout(r, 200));
         }
-          await new Promise(r => setTimeout(r, 200));
-        }
+
         saveVowCache({ lastSyncedId: count, vows: updatedVows });
         calculateMetrics(updatedVows);
       }
@@ -138,6 +133,7 @@ export default function Home() {
       console.error('Failed to compute stats:', e);
     }
   }
+
 
   function calculateMetrics(vowsList: any[]) {
     let escrowSTX = 0;

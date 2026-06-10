@@ -77,7 +77,6 @@ export default function Home() {
             );
           });
 
-          // Clean up storage if some pending vows are already confirmed
           if (pendingVows.length !== parsed.length) {
             localStorage.setItem('pending_vows', JSON.stringify(pendingVows));
           }

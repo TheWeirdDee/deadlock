@@ -100,7 +100,6 @@ export default function Home() {
       const cache = loadVowCache();
       const updatedVows = [...cache.vows];
 
-      // Show metrics from what's cached immediately
       calculateMetrics(updatedVows);
 
       // If the chain has advanced, fetch only the missing vow ids

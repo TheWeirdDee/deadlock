@@ -110,7 +110,6 @@ export default function Home() {
           } catch (e) {
             console.error(`Failed to fetch vow #${i} for stats:`, e);
           }
-          // Rate-limit protection: 200ms between each read-only call
           await new Promise(r => setTimeout(r, 200));
         }
 

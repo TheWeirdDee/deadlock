@@ -106,7 +106,7 @@ export default function Home() {
   async function computeLiveStats() {
     try {
       const count = await getVowCount();
-
+ 
       const cache = loadVowCache();
       const updatedVows = [...cache.vows];
 
@@ -114,6 +114,10 @@ export default function Home() {
       calculateMetrics(updatedVows);
 
       // If the chain has advanced, fetch only the missing vow ids
+ 
+      const cache = loadVowCache();
+      const updatedVows = [...cache.vows];
+      calculateMetrics(updatedVows);
       if (count > cache.lastSyncedId) {
         for (let i = cache.lastSyncedId + 1; i <= count; i++) {
           try {
@@ -122,11 +126,11 @@ export default function Home() {
           } catch (e) {
             console.error(`Failed to fetch vow #${i} for stats:`, e);
           }
-
           // Rate-limit protection: 200ms between each read-only call
           await new Promise(r => setTimeout(r, 200));
         }
-
+          await new Promise(r => setTimeout(r, 200));
+        }
         saveVowCache({ lastSyncedId: count, vows: updatedVows });
         calculateMetrics(updatedVows);
       }
@@ -244,6 +248,7 @@ export default function Home() {
                 <h4 className="text-3xl sm:text-5xl font-bold font-bebas text-white tracking-wider mb-1">
                   {stats.lockedSTX > 0 ? stats.lockedSTX.toFixed(1) : '2.5M'}
                   <span className="text-purple-500 font-bebas">{stats.lockedSTX > 0 ? ' STX' : '+'}</span>
+
                   {stats.lockedSTX > 0 ? stats.lockedSTX.toFixed(1) : '2.5M'}
                   <span className="text-purple-500 font-bebas">{stats.lockedSTX > 0 ? ' STX' : '+'}</span>
                 </h4>
@@ -254,6 +259,7 @@ export default function Home() {
                 <h4 className="text-3xl sm:text-5xl font-bold font-bebas text-white tracking-wider mb-1">
                   {stats.lockedSTX > 0 ? stats.activeVowsCount : '1.2K'}
                   <span className="text-blue-400 font-bebas">{stats.lockedSTX > 0 ? '' : '+'}</span>
+
                   {stats.lockedSTX > 0 ? stats.activeVowsCount : '1.2K'}
                   <span className="text-blue-400 font-bebas">{stats.lockedSTX > 0 ? '' : '+'}</span>
                 </h4>
@@ -262,6 +268,7 @@ export default function Home() {
 
               <div className="border-l border-white/10 pl-6">
                 <h4 className="text-3xl sm:text-5xl font-bold font-bebas text-white tracking-wider mb-1">
+ 
                   {stats.lockedSTX > 0 ? stats.totalVotesCast : '45K'}
                   <span className="text-green-400 font-bebas">{stats.lockedSTX > 0 ? '' : '+'}</span>
                   {stats.lockedSTX > 0 ? stats.totalVotesCast : '45K'}

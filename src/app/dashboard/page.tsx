@@ -1,5 +1,4 @@
- 'use client';
-
+'use client';
 
 import { useState, useEffect } from 'react';
 import { useConnect } from '@stacks/connect-react';
@@ -11,6 +10,13 @@ import { SidebarLayout } from '@/components/SidebarLayout';
 import { VowCard } from '@/components/VowCard';
 import { useRouter } from 'next/navigation';
 
+/**
+ * Dashboard route.
+ *
+ * - Requires an authenticated Stacks session.
+ * - Loads the latest vows from the on-chain contract.
+ * - Merges in locally-stored "pending" vows so the UI reflects newly submitted txs.
+ */
 export default function DashboardPage() {
   const { doOpenAuth } = useConnect();
   const router = useRouter();
@@ -19,9 +25,15 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // AppConfig/UserSession are browser-only; creating them during SSR can cause runtime issues.
   const appConfig = (typeof window !== 'undefined') ? new AppConfig(['store_write', 'publish_data']) : null;
   const userSession = appConfig ? new UserSession({ appConfig }) : null;
 
+  /**
+   * Session gate:
+   * - If signed in: load user profile and start fetching vows.
+   * - If not signed in (or session fails): redirect to home.
+   */
   useEffect(() => {
     try {
       if (userSession && userSession.isUserSignedIn()) {
@@ -130,6 +142,11 @@ export default function DashboardPage() {
 
         {myVows.length > 0 && (
           <div>
+            {/*
+             * UX banner.
+             * Note: This is currently hardcoded (VOW #12) and does not reflect the real deadline
+             * for the user's active vows.
+             */}
             <div className="flex items-center gap-3 mb-6 border-b border-purple-500/30 pb-4">
               <div className="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></div>
               <h3 className="text-2xl font-bold text-white uppercase tracking-widest font-bebas">ACTION REQUIRED</h3>

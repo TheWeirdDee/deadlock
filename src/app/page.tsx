@@ -72,7 +72,6 @@ export default function Home() {
         const vow = await getVow(i);
         if (vow) fetchedVows.push({ ...vow, id: i });
       }
-
        
       let pendingVows: any[] = [];
       try {

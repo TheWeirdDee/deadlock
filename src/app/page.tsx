@@ -15,14 +15,6 @@ import { CreateVowModal } from '@/components/CreateVowModal';
 import { Header } from '@/components/Header';
 import { VowCard } from '@/components/VowCard';
 
-/**
- * Home route.
- *
- * Handles:
- * - Auth session + user profile loading
- * - Initial on-chain vow fetch (with cached/pending merge)
- * - Live stats computation from vow cache / on-chain reads
- */
 export default function Home() {
   const { doOpenAuth } = useConnect();
   const [userData, setUserData] = useState<any>(null);

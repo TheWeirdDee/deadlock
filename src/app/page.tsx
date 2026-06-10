@@ -73,7 +73,7 @@ export default function Home() {
         if (vow) fetchedVows.push({ ...vow, id: i });
       }
 
-      // Merge local pending vows (created txs not yet reflected on-chain)
+       
       let pendingVows: any[] = [];
       try {
         const stored = localStorage.getItem('pending_vows');

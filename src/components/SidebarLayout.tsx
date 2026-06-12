@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/Header';
 
-export function SidebarLayout({ children, activePage }: { children: React.ReactNode, activePage: 'analytics' | 'dashboard' | 'docs' | 'feed' | 'leaderboard' }) {
+export function SidebarLayout({ children, activePage }: { children: React.ReactNode, activePage: 'analytics' | 'dashboard' | 'docs' | 'feed' | 'leaderboard' | 'status' }) {
   const { doOpenAuth } = useConnect();
   const router = useRouter();
   const [userData, setUserData] = useState<any>(null);
@@ -95,6 +95,11 @@ export function SidebarLayout({ children, activePage }: { children: React.ReactN
               <li>
                 <Link href="/docs" className={`flex items-center px-2 py-2 rounded-md transition-colors ${activePage === 'docs' ? 'bg-purple-500/20 text-purple-400' : 'hover:bg-white/5 hover:text-white'}`}>
                   Developer Docs
+                </Link>
+              </li>
+              <li>
+                <Link href="/status" className={`flex items-center px-2 py-2 rounded-md transition-colors ${activePage === 'status' ? 'bg-purple-500/20 text-purple-400' : 'hover:bg-white/5 hover:text-white'}`}>
+                  System Status
                 </Link>
               </li>
             </ul>

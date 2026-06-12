@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useConnect } from '@stacks/connect-react';
 import { AppConfig, UserSession } from '@stacks/connect';
 import { AnimatePresence } from 'framer-motion';
@@ -25,15 +25,15 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // AppConfig/UserSession are browser-only; creating them during SSR can cause runtime issues.
-  const appConfig = (typeof window !== 'undefined') ? new AppConfig(['store_write', 'publish_data']) : null;
-  const userSession = appConfig ? new UserSession({ appConfig }) : null;
+  // Stable ref — UserSession must not be recreated every render or it causes
+  // infinite re-renders when placed in useEffect deps.
+  const userSessionRef = useRef<UserSession | null>(null);
+  if (!userSessionRef.current && typeof window !== 'undefined') {
+    const appConfig = new AppConfig(['store_write', 'publish_data']);
+    userSessionRef.current = new UserSession({ appConfig });
+  }
+  const userSession = userSessionRef.current;
 
-  /**
-   * Session gate:
-   * - If signed in: load user profile and start fetching vows.
-   * - If not signed in (or session fails): redirect to home.
-   */
   useEffect(() => {
     try {
       if (userSession && userSession.isUserSignedIn()) {
@@ -46,7 +46,8 @@ export default function DashboardPage() {
       if (process.env.NODE_ENV !== 'production') console.error('Auth session error, clearing local storage:', e);
       router.push('/');
     }
-  }, [router, userSession]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const handleUpdate = () => fetchVows();

@@ -45,7 +45,7 @@ Thumbs.db
 Desktop.ini
 
 # --- Editor / IDE config ---
-.vscode/
+.vscode/*
 !.vscode/settings.json
 .idea/
 *.swp
@@ -62,8 +62,6 @@ coverage/
 *.key
 *.cert
 
-# --- Private automation scripts ---
-# These scripts contain wallet automation logic and must never be committed.
 private/
 scripts/
 state/

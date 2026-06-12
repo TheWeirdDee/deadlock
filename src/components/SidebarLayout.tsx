@@ -121,9 +121,44 @@ export function SidebarLayout({ children, activePage }: { children: React.ReactN
         </div>
       </aside>
 
-      <div className="flex-1 p-4 lg:p-8 overflow-y-auto h-screen relative z-10">
+      <div className="flex-1 p-4 lg:p-8 overflow-y-auto h-screen relative z-10 pb-20 lg:pb-8">
         {children}
       </div>
+
+      {/* Mobile / tablet bottom nav — hidden on desktop where sidebar takes over */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 flex lg:hidden border-t border-white/10 bg-black/95 backdrop-blur-md">
+        {[
+          { href: '/dashboard', label: 'Home', page: 'dashboard', icon: (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          )},
+          { href: '/feed', label: 'Feed', page: 'feed', icon: (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          )},
+          { href: '/leaderboard', label: 'Board', page: 'leaderboard', icon: (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          )},
+          { href: '/analytics', label: 'Analytics', page: 'analytics', icon: (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          )},
+          { href: `/profile/${userAddress}`, label: 'Profile', page: 'profile', icon: (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          )},
+        ].map(({ href, label, page, icon }) => {
+          const isActive = activePage === page;
+          return (
+            <Link
+              key={page}
+              href={href}
+              className={`flex-1 flex flex-col items-center justify-center py-3 gap-1 text-[9px] font-bold tracking-widest uppercase transition-colors ${
+                isActive ? 'text-purple-400' : 'text-gray-500 hover:text-gray-300'
+              }`}
+            >
+              <span className={isActive ? 'text-purple-400' : ''}>{icon}</span>
+              {label}
+            </Link>
+          );
+        })}
+      </nav>
     </main>
   );
 }

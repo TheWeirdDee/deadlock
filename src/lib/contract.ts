@@ -158,6 +158,26 @@ export async function getSpectatorPool(vowId: number) {
  * Prevents the frontend from showing vote buttons to addresses that have
  * already cast a vote, avoiding failed duplicate-vote transactions.
  */
+export async function getSpectatorBet(vowId: number, spectator: string) {
+  const options: ReadOnlyFunctionOptions = {
+    contractAddress,
+    contractName,
+    functionName: 'get-spectator-bet',
+    functionArgs: [uintCV(Number(vowId)), principalCV(spectator)],
+    network,
+    senderAddress: contractAddress,
+  };
+
+  try {
+    const result = await withRetry(() => callReadOnlyFunction(options), 3, 400);
+    const bet = cleanCV(cvToJSON(result));
+    if (!bet || typeof bet !== 'object') return null;
+    return bet as { amount: number; prediction: boolean; claimed: boolean };
+  } catch {
+    return null;
+  }
+}
+
 export async function getHasVoted(vowId: number, voterAddress: string): Promise<boolean> {
   const options: ReadOnlyFunctionOptions = {
     contractAddress,

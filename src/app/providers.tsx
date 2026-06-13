@@ -4,6 +4,7 @@ import 'regenerator-runtime/runtime';
 import { AppConfig, UserSession } from '@stacks/connect';
 import { Connect } from '@stacks/connect-react';
 import { useState, useEffect, useMemo } from 'react';
+import { ToastProvider } from '@/components/Toast';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
@@ -34,7 +35,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <Connect authOptions={authOptions}>
-      {children}
+      <ToastProvider>
+        {children}
+      </ToastProvider>
     </Connect>
   );
 }

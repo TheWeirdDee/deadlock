@@ -46,6 +46,8 @@ Desktop.ini
 coverage/
 .nyc_output
 
+sdk/dist/
+
 # --- SSL / Secrets ---
 *.pem
 *.key

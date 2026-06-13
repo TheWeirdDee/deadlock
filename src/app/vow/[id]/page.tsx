@@ -1,6 +1,6 @@
  'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useConnect } from '@stacks/connect-react';
 import { AppConfig, UserSession } from '@stacks/connect';
@@ -67,12 +67,16 @@ export default function VowPage() {
   const [githubData, setGithubData] = useState<any>(null);
   const [githubLoading, setGithubLoading] = useState<boolean>(false);
 
-  const appConfig = new AppConfig(['store_write', 'publish_data']);
-  const userSession = new UserSession({ appConfig });
+  const userSessionRef = useRef<UserSession | null>(null);
+  if (!userSessionRef.current && typeof window !== 'undefined') {
+    const appConfig = new AppConfig(['store_write', 'publish_data']);
+    userSessionRef.current = new UserSession({ appConfig });
+  }
+  const userSession = userSessionRef.current;
 
   useEffect(() => {
     try {
-      if (userSession.isUserSignedIn()) {
+      if (userSession && userSession.isUserSignedIn()) {
         setUserData(userSession.loadUserData());
       }
     } catch (e) {

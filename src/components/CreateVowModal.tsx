@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useConnect } from '@stacks/connect-react';
 import { AppConfig, UserSession } from '@stacks/connect';
 import { 
@@ -19,8 +19,12 @@ import { contractDetails, getNetwork } from '@/lib/contract';
 export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
   const { doContractCall, doOpenAuth } = useConnect();
   
-  const appConfig = typeof window !== 'undefined' ? new AppConfig(['store_write', 'publish_data']) : null;
-  const userSession = appConfig ? new UserSession({ appConfig }) : null;
+  const userSessionRef = useRef<UserSession | null>(null);
+  if (!userSessionRef.current && typeof window !== 'undefined') {
+    const appConfig = new AppConfig(['store_write', 'publish_data']);
+    userSessionRef.current = new UserSession({ appConfig });
+  }
+  const userSession = userSessionRef.current;
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');

@@ -1,19 +1,23 @@
  'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useConnect } from '@stacks/connect-react';
 import { AppConfig, UserSession } from '@stacks/connect';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/Header';
 
-export function SidebarLayout({ children, activePage }: { children: React.ReactNode, activePage: 'analytics' | 'dashboard' | 'docs' | 'feed' | 'leaderboard' | 'status' }) {
+export function SidebarLayout({ children, activePage }: { children: React.ReactNode, activePage: 'analytics' | 'dashboard' | 'docs' | 'feed' | 'leaderboard' | 'profile' | 'status' }) {
   const { doOpenAuth } = useConnect();
   const router = useRouter();
   const [userData, setUserData] = useState<any>(null);
 
-  const appConfig = (typeof window !== 'undefined') ? new AppConfig(['store_write', 'publish_data']) : null;
-  const userSession = appConfig ? new UserSession({ appConfig }) : null;
+  const userSessionRef = useRef<UserSession | null>(null);
+  if (!userSessionRef.current && typeof window !== 'undefined') {
+    const appConfig = new AppConfig(['store_write', 'publish_data']);
+    userSessionRef.current = new UserSession({ appConfig });
+  }
+  const userSession = userSessionRef.current;
 
   useEffect(() => {
     if (userSession && userSession.isUserSignedIn()) {
@@ -38,9 +42,37 @@ export function SidebarLayout({ children, activePage }: { children: React.ReactN
         
         <Header userData={userData} handleLogin={handleLogin} handleLogout={handleLogout} />
         
-        <div className="w-full flex-1 flex flex-col relative z-10 max-w-6xl">
+        <div className="w-full flex-1 flex flex-col relative z-10 max-w-6xl pb-20 lg:pb-0">
           {children}
         </div>
+
+        <nav className="fixed bottom-0 left-0 right-0 z-50 flex lg:hidden border-t border-white/10 bg-black/95 backdrop-blur-md">
+          {[
+            { href: '/feed', label: 'Feed', page: 'feed', icon: (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            )},
+            { href: '/leaderboard', label: 'Board', page: 'leaderboard', icon: (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+            )},
+            { href: '/analytics', label: 'Analytics', page: 'analytics', icon: (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            )},
+            { href: '/docs', label: 'Docs', page: 'docs', icon: (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            )},
+            { href: '/status', label: 'Status', page: 'status', icon: (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            )},
+          ].map(({ href, label, page, icon }) => {
+            const isActive = activePage === page;
+            return (
+              <Link key={page} href={href} className={`flex-1 flex flex-col items-center justify-center py-3 gap-1 text-[9px] font-bold tracking-widest uppercase transition-colors ${isActive ? 'text-purple-400' : 'text-gray-500 hover:text-gray-300'}`}>
+                <span className={isActive ? 'text-purple-400' : ''}>{icon}</span>
+                {label}
+              </Link>
+            );
+          })}
+        </nav>
       </main>
     );
   }
@@ -110,7 +142,7 @@ export function SidebarLayout({ children, activePage }: { children: React.ReactN
           <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-2 px-2">Profile</p>
           <div className="px-2">
             {userData ? (
-              <Link href={`/profile/${userAddress}`} className="text-xs font-mono text-gray-400 truncate mb-2 block hover:text-purple-400 transition-colors" title="View Profile">
+              <Link href={`/profile/${userAddress}`} className={`text-xs font-mono truncate mb-2 block transition-colors ${activePage === 'profile' ? 'text-purple-400' : 'text-gray-400 hover:text-purple-400'}`} title="View Profile">
                 {userAddress}
               </Link>
             ) : (

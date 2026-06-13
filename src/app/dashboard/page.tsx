@@ -3,11 +3,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useConnect } from '@stacks/connect-react';
 import { AppConfig, UserSession } from '@stacks/connect';
+import { AnchorMode, PostConditionMode, uintCV } from '@stacks/transactions';
 import { AnimatePresence } from 'framer-motion';
-import { getVowCount, getVow, getSpectatorBet, getCurrentBlockHeight } from '@/lib/contract';
+import { getVowCount, getVow, getSpectatorBet, getCurrentBlockHeight, contractDetails, getNetwork } from '@/lib/contract';
 import { CreateVowModal } from '@/components/CreateVowModal';
 import { SidebarLayout } from '@/components/SidebarLayout';
 import { VowCard } from '@/components/VowCard';
+import { useToast } from '@/components/Toast';
 import { VOW_STATUS } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 
@@ -22,7 +24,8 @@ interface BetEntry {
 }
 
 export default function DashboardPage() {
-  const { doOpenAuth } = useConnect();
+  const { doOpenAuth, doContractCall } = useConnect();
+  const { toast } = useToast();
   const router = useRouter();
   const [userData, setUserData] = useState<any>(null);
   const [myVows, setMyVows] = useState<any[]>([]);
@@ -157,6 +160,24 @@ export default function DashboardPage() {
     window.addEventListener('vows_updated', handleUpdate);
     return () => window.removeEventListener('vows_updated', handleUpdate);
   }, [userData, fetchDashboard]);
+
+  const handleClaim = async (vowId: number) => {
+    await doContractCall({
+      contractAddress: contractDetails.address,
+      contractName: contractDetails.name,
+      functionName: 'claim-spectator-winnings',
+      functionArgs: [uintCV(vowId)],
+      network: getNetwork(),
+      anchorMode: AnchorMode.Any,
+      postConditionMode: PostConditionMode.Allow,
+      onFinish: () => {
+        toast('Claim submitted — winnings will arrive once confirmed on-chain.', 'success');
+        const address = userData?.profile?.stxAddress?.mainnet || userData?.profile?.stxAddress?.testnet;
+        if (address) fetchDashboard(address);
+      },
+      onCancel: () => toast('Claim cancelled.', 'info'),
+    });
+  };
 
   const handleLogout = () => {
     userSession?.signUserOut();
@@ -379,12 +400,12 @@ export default function DashboardPage() {
                           {bet.claimed ? (
                             <span className="text-[10px] text-gray-500 font-mono">CLAIMED</span>
                           ) : won ? (
-                            <a
-                              href={`/vow/${bet.vowId}`}
+                            <button
+                              onClick={() => handleClaim(bet.vowId)}
                               className="text-[10px] font-bold text-green-400 hover:text-green-300 tracking-widest uppercase border border-green-500/30 px-2 py-1 rounded transition-colors"
                             >
                               CLAIM
-                            </a>
+                            </button>
                           ) : (
                             <span className="text-[10px] text-gray-600 font-mono">—</span>
                           )}

@@ -1,6 +1,6 @@
  'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useConnect } from '@stacks/connect-react';
 import { AppConfig, UserSession } from '@stacks/connect';
 import { SidebarLayout } from '@/components/SidebarLayout';
@@ -13,14 +13,18 @@ export default function DocsPage() {
   const [userData, setUserData] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('overview');
 
-  const appConfig = (typeof window !== 'undefined') ? new AppConfig(['store_write', 'publish_data']) : null;
-  const userSession = appConfig ? new UserSession({ appConfig }) : null;
+  const userSessionRef = useRef<UserSession | null>(null);
+  if (!userSessionRef.current && typeof window !== 'undefined') {
+    const appConfig = new AppConfig(['store_write', 'publish_data']);
+    userSessionRef.current = new UserSession({ appConfig });
+  }
+  const userSession = userSessionRef.current;
 
   useEffect(() => {
     if (userSession && userSession.isUserSignedIn()) {
       setUserData(userSession.loadUserData());
     }
-  }, [userSession]);
+  }, []);
 
   const handleLogin = () => doOpenAuth();
   const handleLogout = () => {

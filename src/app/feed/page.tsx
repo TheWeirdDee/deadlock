@@ -1,6 +1,6 @@
  'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useConnect } from '@stacks/connect-react';
 import { AppConfig, UserSession } from '@stacks/connect';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -16,12 +16,16 @@ export default function FeedPage() {
   const [vows, setVows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const appConfig = new AppConfig(['store_write', 'publish_data']);
-  const userSession = new UserSession({ appConfig });
+  const userSessionRef = useRef<UserSession | null>(null);
+  if (!userSessionRef.current && typeof window !== 'undefined') {
+    const appConfig = new AppConfig(['store_write', 'publish_data']);
+    userSessionRef.current = new UserSession({ appConfig });
+  }
+  const userSession = userSessionRef.current;
 
   useEffect(() => {
     try {
-      if (userSession.isUserSignedIn()) {
+      if (userSession && userSession.isUserSignedIn()) {
         setUserData(userSession.loadUserData());
       }
     } catch (e) {

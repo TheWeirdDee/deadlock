@@ -157,7 +157,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <SidebarLayout activePage="dashboard">
+    <SidebarLayout activePage="profile">
       <div className="space-y-12 max-w-6xl mt-4 mb-24 relative z-10 font-space">
         
         {/* Profile Header */}

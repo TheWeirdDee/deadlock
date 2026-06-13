@@ -105,7 +105,6 @@ export async function getVowCount(): Promise<number> {
     senderAddress: contractAddress,
   };
 
-  console.log('[contract] Fetching vow count');
   if (process.env.NODE_ENV !== 'production') console.debug('[contract] Fetching vow count');
   const result = await withRetry(() => callReadOnlyFunction(options), 5, 1000);
   const count = Number(cleanCV(cvToJSON(result)));

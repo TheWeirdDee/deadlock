@@ -125,7 +125,7 @@ export default function StatusPage() {
   ];
 
   return (
-    <SidebarLayout activePage="analytics">
+    <SidebarLayout activePage="status">
       <div className="space-y-10 max-w-4xl mt-4 mb-24 font-space">
 
         {/* Header */}

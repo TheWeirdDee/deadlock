@@ -20,9 +20,14 @@ if (!process.env.NEXT_PUBLIC_NETWORK) {
 }
 
 
-const network = process.env.NEXT_PUBLIC_NETWORK === 'mainnet' 
-  ? new StacksMainnet() 
-  : new StacksTestnet();
+const HIRO_API_KEY = process.env.NEXT_PUBLIC_HIRO_API_KEY;
+const networkOpts = HIRO_API_KEY
+  ? { fetchOptions: { headers: { 'x-api-key': HIRO_API_KEY } } }
+  : undefined;
+
+const network = process.env.NEXT_PUBLIC_NETWORK === 'mainnet'
+  ? new StacksMainnet(networkOpts)
+  : new StacksTestnet(networkOpts);
 
 async function withRetry<T>(fn: () => Promise<T>, attempts = 3, baseDelay = 500): Promise<T> {
   let lastError: any;
@@ -214,7 +219,8 @@ export function getCurrentBlockHeight(): Promise<number> {
     try {
       const network = getNetwork();
       const apiBase = network.coreApiUrl || (process.env.NEXT_PUBLIC_NETWORK === 'mainnet' ? 'https://api.mainnet.hiro.so' : 'https://api.testnet.hiro.so');
-      const res = await fetch(`${apiBase}/v2/info`);
+      const fetchHeaders: HeadersInit = HIRO_API_KEY ? { 'x-api-key': HIRO_API_KEY } : {};
+      const res = await fetch(`${apiBase}/v2/info`, { headers: fetchHeaders });
       if (res.ok) {
         const info = await res.json();
         if (info.stacks_tip_height) {

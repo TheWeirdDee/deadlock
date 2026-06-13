@@ -34,7 +34,8 @@ Thumbs.db
 Desktop.ini
 
 # --- Editor / IDE config ---
-.vscode/
+.vscode/*
+!.vscode/settings.json
 .idea/
 *.swp
 *.swo

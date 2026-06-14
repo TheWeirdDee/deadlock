@@ -14,6 +14,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { getVow, getSpectatorPool, contractDetails, getNetwork, getCurrentBlockHeight } from '@/lib/contract';
 import { VOW_TYPES, VOW_STATUS } from '@/lib/types';
+import { sanitize } from '@/lib/sanitize';
 
 const formatUTC = (date: Date) => {
   return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
@@ -375,8 +376,8 @@ export default function VowPage() {
               </span>
               <span className="text-xs font-mono text-gray-500">VOW #{id}</span>
             </div>
-            <h1 className="text-4xl sm:text-6xl font-bold uppercase tracking-tight leading-none text-white break-words">{vow.title}</h1>
-            <p className="text-lg text-gray-400 leading-relaxed max-w-3xl font-space">{vow.description}</p>
+            <h1 className="text-4xl sm:text-6xl font-bold uppercase tracking-tight leading-none text-white break-words">{sanitize(vow.title ?? '')}</h1>
+            <p className="text-lg text-gray-400 leading-relaxed max-w-3xl font-space">{sanitize(vow.description ?? '')}</p>
           </section>
 
           <section className="grid grid-cols-2 sm:grid-cols-4 gap-4">

@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { VOW_TYPES, VOW_STATUS } from '@/lib/types';
 import { getCurrentBlockHeight } from '@/lib/contract';
+import { sanitize } from '@/lib/sanitize';
 
 function getTypeColor(vowType: number): string {
   if (vowType === VOW_TYPES.BURN) return 'border-purple-400 text-purple-400';
@@ -78,9 +79,9 @@ export function VowCard({ vow, index }: { vow: any; index: number }) {
         </span>
       </div>
 
-      <h4 className="text-2xl font-bold mb-2 uppercase leading-tight truncate">{vow.title}</h4>
+      <h4 className="text-2xl font-bold mb-2 uppercase leading-tight truncate">{sanitize(vow.title ?? '')}</h4>
       <p className="text-sm opacity-60 mb-6 flex-grow line-clamp-3 leading-relaxed">
-        {vow.description === 'Farming description' ? 'A public vow has been made. The stakes are high, and the world is watching.' : vow.description}
+        {vow.description === 'Farming description' ? 'A public vow has been made. The stakes are high, and the world is watching.' : sanitize(vow.description ?? '')}
       </p>
 
       <div className="mt-auto pt-6 border-t border-white/5 space-y-4">

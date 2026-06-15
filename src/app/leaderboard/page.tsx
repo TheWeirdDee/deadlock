@@ -62,6 +62,7 @@ export default function LeaderboardPage() {
             console.error(`Failed to fetch vow #${i}:`, e);
           }
           setSyncProgress(prev => ({ ...prev, current: prev.current + 1 }));
+          await new Promise(r => setTimeout(r, 150));
         }
 
         try {

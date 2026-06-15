@@ -19,6 +19,8 @@
     "@stacks/connect-react": "22.4.0",
     "@stacks/network": "6.17.0",
     "@stacks/transactions": "6.17.0",
+    "@types/dompurify": "^3.0.5",
+    "dompurify": "^3.4.10",
     "framer-motion": "^11.0.0",
     "gsap": "^3.12.5",
     "next": "14.2.3",

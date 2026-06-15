@@ -22,7 +22,13 @@ if (!process.env.NEXT_PUBLIC_NETWORK) {
 
 const HIRO_API_KEY = process.env.NEXT_PUBLIC_HIRO_API_KEY;
 const networkOpts = HIRO_API_KEY
-  ? { fetchOptions: { headers: { 'x-api-key': HIRO_API_KEY } } }
+  ? {
+      fetchFn: (url: string, init?: RequestInit) =>
+        fetch(url, {
+          ...init,
+          headers: { ...(init?.headers as Record<string, string>), 'x-api-key': HIRO_API_KEY! },
+        }),
+    }
   : undefined;
 
 const network = process.env.NEXT_PUBLIC_NETWORK === 'mainnet'

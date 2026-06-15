@@ -21,7 +21,7 @@ export default function Home() {
   const [vows, setVows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [stats, setStats] = useState({ lockedSTX: 0, activeVowsCount: 0, totalVotesCast: 0 });
+  const [stats, setStats] = useState<{ lockedSTX: number; activeVowsCount: number; totalVotesCast: number } | null>(null);
   const container = useRef<HTMLDivElement>(null);
 
   useGSAP(() => {
@@ -233,33 +233,33 @@ export default function Home() {
             <div id="analytics" className="lg:col-span-7 grid grid-cols-3 gap-6 text-left">
               <div>
                 <h4 className="text-3xl sm:text-5xl font-bold font-bebas text-white tracking-wider mb-1">
-                  {stats.lockedSTX > 0 ? stats.lockedSTX.toFixed(1) : '2.5M'}
-                  <span className="text-purple-500 font-bebas">{stats.lockedSTX > 0 ? ' STX' : '+'}</span>
-
-                  {stats.lockedSTX > 0 ? stats.lockedSTX.toFixed(1) : '2.5M'}
-                  <span className="text-purple-500 font-bebas">{stats.lockedSTX > 0 ? ' STX' : '+'}</span>
+                  {stats === null ? (
+                    <span className="text-gray-600 animate-pulse">---</span>
+                  ) : (
+                    <>{stats.lockedSTX.toFixed(1)}<span className="text-purple-500"> STX</span></>
+                  )}
                 </h4>
                 <p className="text-[10px] tracking-widest text-gray-500 uppercase font-bold">STX ESCROWED</p>
               </div>
 
               <div className="border-l border-white/10 pl-6">
                 <h4 className="text-3xl sm:text-5xl font-bold font-bebas text-white tracking-wider mb-1">
-                  {stats.lockedSTX > 0 ? stats.activeVowsCount : '1.2K'}
-                  <span className="text-blue-400 font-bebas">{stats.lockedSTX > 0 ? '' : '+'}</span>
-
-                  {stats.lockedSTX > 0 ? stats.activeVowsCount : '1.2K'}
-                  <span className="text-blue-400 font-bebas">{stats.lockedSTX > 0 ? '' : '+'}</span>
+                  {stats === null ? (
+                    <span className="text-gray-600 animate-pulse">---</span>
+                  ) : (
+                    <>{stats.activeVowsCount}<span className="text-blue-400"> ACTIVE</span></>
+                  )}
                 </h4>
                 <p className="text-[10px] tracking-widest text-gray-500 uppercase font-bold">ACTIVE VOWS</p>
               </div>
 
               <div className="border-l border-white/10 pl-6">
                 <h4 className="text-3xl sm:text-5xl font-bold font-bebas text-white tracking-wider mb-1">
- 
-                  {stats.lockedSTX > 0 ? stats.totalVotesCast : '45K'}
-                  <span className="text-green-400 font-bebas">{stats.lockedSTX > 0 ? '' : '+'}</span>
-                  {stats.lockedSTX > 0 ? stats.totalVotesCast : '45K'}
-                  <span className="text-green-400 font-bebas">{stats.lockedSTX > 0 ? '' : '+'}</span>
+                  {stats === null ? (
+                    <span className="text-gray-600 animate-pulse">---</span>
+                  ) : (
+                    <>{stats.totalVotesCast}<span className="text-green-400"> VOTES</span></>
+                  )}
                 </h4>
                 <p className="text-[10px] tracking-widest text-gray-500 uppercase font-bold">VOTES CAST</p>
               </div>

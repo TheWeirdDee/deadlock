@@ -5,6 +5,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://deadlock.wtf'),
   title: "DEADLOCK | Public Accountability on Bitcoin",
   description: "Put your STX where your mouth is. Public accountability vows secured by Stacks and Bitcoin.",
   openGraph: {

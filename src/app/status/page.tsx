@@ -18,6 +18,8 @@ const HIRO_API =
     ? 'https://api.mainnet.hiro.so'
     : 'https://api.testnet.hiro.so';
 
+const HIRO_API_KEY = process.env.NEXT_PUBLIC_HIRO_API_KEY;
+
 async function timed<T>(fn: () => Promise<T>): Promise<{ result: T; ms: number }> {
   const t0 = performance.now();
   const result = await fn();
@@ -39,7 +41,9 @@ export default function StatusPage() {
     // Hiro API ping + block height
     try {
       const { result, ms } = await timed(() =>
-        fetch(`${HIRO_API}/v2/info`).then(r => {
+        fetch(`${HIRO_API}/v2/info`, {
+          headers: HIRO_API_KEY ? { 'x-api-key': HIRO_API_KEY } : {},
+        }).then(r => {
           if (!r.ok) throw new Error(`HTTP ${r.status}`);
           return r.json();
         })

@@ -1,4 +1,4 @@
- 'use client';
+'use client';
 
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -6,6 +6,25 @@ import { SidebarLayout } from '@/components/SidebarLayout';
 import { getVowCount, getVow } from '@/lib/contract';
 import { VOW_TYPES, VOW_STATUS } from '@/lib/types';
 import Link from 'next/link';
+
+const LEADERBOARD_CACHE_KEY = 'deadlock_leaderboard_cache';
+const LEADERBOARD_TTL_MS = 10 * 60 * 1000;
+
+function loadLeaderboardCache(): LeaderboardEntry[] | null {
+  try {
+    const raw = localStorage.getItem(LEADERBOARD_CACHE_KEY);
+    if (!raw) return null;
+    const { data, timestamp } = JSON.parse(raw);
+    if (Date.now() - timestamp < LEADERBOARD_TTL_MS) return data;
+  } catch {}
+  return null;
+}
+
+function saveLeaderboardCache(data: LeaderboardEntry[]) {
+  try {
+    localStorage.setItem(LEADERBOARD_CACHE_KEY, JSON.stringify({ data, timestamp: Date.now() }));
+  } catch {}
+}
 
 interface LeaderboardEntry {
   address: string;
@@ -24,7 +43,13 @@ export default function LeaderboardPage() {
   const [sortBy, setSortBy] = useState<'reputation' | 'winRate' | 'staked'>('reputation');
 
   useEffect(() => {
-    syncAndAggregate();
+    const cached = loadLeaderboardCache();
+    if (cached) {
+      setLeaderboard(cached);
+      setLoading(false);
+    } else {
+      syncAndAggregate();
+    }
   }, []);
 
   async function syncAndAggregate() {
@@ -135,6 +160,7 @@ export default function LeaderboardPage() {
 
       const rawLeaderboard = Object.values(statsMap);
       setLeaderboard(rawLeaderboard);
+      saveLeaderboardCache(rawLeaderboard);
     } catch (e) {
       console.error('Error loading leaderboard:', e);
     } finally {
@@ -185,8 +211,8 @@ export default function LeaderboardPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <button 
-              onClick={syncAndAggregate} 
+            <button
+              onClick={() => { localStorage.removeItem(LEADERBOARD_CACHE_KEY); syncAndAggregate(); }}
               disabled={loading}
               className="text-xs px-4 py-2 border border-white/20 hover:border-white/50 hover:bg-white/5 disabled:opacity-50 text-white font-bold tracking-widest uppercase rounded-full transition-all duration-300 font-bebas flex items-center gap-2"
             >

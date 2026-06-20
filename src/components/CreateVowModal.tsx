@@ -15,9 +15,11 @@ import {
 import { motion } from 'framer-motion';
 import { VOW_TYPES } from '@/lib/types';
 import { contractDetails, getNetwork, getCurrentBlockHeight } from '@/lib/contract';
+import { useToast } from '@/components/Toast';
 
 export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
   const { doContractCall, doOpenAuth } = useConnect();
+  const { toast } = useToast();
   
   const userSessionRef = useRef<UserSession | null>(null);
   if (!userSessionRef.current && typeof window !== 'undefined') {
@@ -115,7 +117,7 @@ export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
       anchorMode: AnchorMode.Any,
       postConditionMode: PostConditionMode.Allow,
       onFinish: (data) => {
-        console.log('Transaction sent:', data);
+        toast('Vow submitted — it will appear once confirmed on-chain.', 'success');
         try {
           const pendingVow = {
             id: `pending-${data.txId}`,
@@ -136,9 +138,7 @@ export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
         }
         onClose();
       },
-      onCancel: () => {
-        console.log('Transaction cancelled');
-      },
+      onCancel: () => toast('Transaction cancelled.', 'info'),
     });
   };
 

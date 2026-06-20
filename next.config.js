@@ -14,11 +14,11 @@ const securityHeaders = [
     key: 'Content-Security-Policy',
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://plausible.io",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
       "img-src 'self' data: blob: https:",
-      "connect-src 'self' https://api.mainnet.hiro.so https://api.testnet.hiro.so https://api.hiro.so wss://api.mainnet.hiro.so wss://api.testnet.hiro.so https://*.blockstack.org https://*.stacks.co",
+      "connect-src 'self' https://api.mainnet.hiro.so https://api.testnet.hiro.so https://api.hiro.so wss://api.mainnet.hiro.so wss://api.testnet.hiro.so https://*.blockstack.org https://*.stacks.co https://*.ingest.sentry.io https://plausible.io",
       "frame-src 'self' https://wallet.hiro.so https://app.blockstack.org",
       "worker-src 'self' blob:",
     ].join('; '),
@@ -46,4 +46,10 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
+let finalConfig = nextConfig;
+try {
+  const { withSentryConfig } = require('@sentry/nextjs');
+  finalConfig = withSentryConfig(nextConfig, { silent: true });
+} catch {}
+
+module.exports = finalConfig;

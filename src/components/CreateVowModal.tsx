@@ -14,7 +14,7 @@ import {
 } from '@stacks/transactions';
 import { motion } from 'framer-motion';
 import { VOW_TYPES } from '@/lib/types';
-import { contractDetails, getNetwork } from '@/lib/contract';
+import { contractDetails, getNetwork, getCurrentBlockHeight } from '@/lib/contract';
 
 export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
   const { doContractCall, doOpenAuth } = useConnect();
@@ -40,25 +40,10 @@ export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
   useEffect(() => {
     if (!isOpen) return;
     let active = true;
-    async function fetchBlockHeight() {
-      try {
-        const network = getNetwork();
-        const apiBase = network.coreApiUrl || (process.env.NEXT_PUBLIC_NETWORK === 'mainnet' ? 'https://api.mainnet.hiro.so' : 'https://api.testnet.hiro.so');
-        const res = await fetch(`${apiBase}/v2/info`);
-        if (res.ok) {
-          const info = await res.json();
-          if (info && info.stacks_tip_height && active) {
-            setCurrentBlock(info.stacks_tip_height);
-          }
-        }
-      } catch (e) {
-        console.error('Failed to fetch block height:', e);
-      }
-    }
-    fetchBlockHeight();
-    return () => {
-      active = false;
-    };
+    getCurrentBlockHeight()
+      .then(height => { if (active) setCurrentBlock(height); })
+      .catch(e => console.error('Failed to fetch block height:', e));
+    return () => { active = false; };
   }, [isOpen]);
 
   if (!isOpen) return null;

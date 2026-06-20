@@ -187,9 +187,50 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <SidebarLayout activePage="dashboard">
-        <div className="flex-grow flex items-center justify-center h-full min-h-[50vh]">
-          <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
-        </div>
+        <section className="w-full max-w-6xl mt-4 mb-24 z-10 relative space-y-12">
+          {/* Welcome header skeleton */}
+          <div className="glass-card p-8 flex flex-col md:flex-row justify-between items-start md:items-center border-t-2 border-purple-500/30 gap-6 animate-pulse">
+            <div className="space-y-3 flex-1">
+              <div className="h-8 w-48 bg-white/10 rounded" />
+              <div className="h-4 w-72 bg-white/5 rounded" />
+            </div>
+            <div className="flex gap-8 items-center flex-wrap">
+              <div className="text-right space-y-2">
+                <div className="h-3 w-16 bg-white/5 rounded ml-auto" />
+                <div className="h-6 w-12 bg-white/10 rounded ml-auto" />
+              </div>
+              <div className="text-right space-y-2">
+                <div className="h-3 w-20 bg-white/5 rounded ml-auto" />
+                <div className="h-6 w-16 bg-white/10 rounded ml-auto" />
+              </div>
+              <div className="h-12 w-36 bg-white/10 rounded-full" />
+            </div>
+          </div>
+
+          {/* Vow cards skeleton */}
+          <div>
+            <div className="h-8 w-32 bg-white/10 rounded mb-6 animate-pulse" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="h-56 glass-card animate-pulse bg-white/5" />
+              ))}
+            </div>
+          </div>
+
+          {/* Bets table skeleton */}
+          <div>
+            <div className="h-8 w-48 bg-white/10 rounded mb-6 animate-pulse" />
+            <div className="glass-card p-6 space-y-4 animate-pulse">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="flex gap-4 py-3 border-b border-white/5">
+                  <div className="h-4 flex-1 bg-white/10 rounded" />
+                  <div className="h-4 w-20 bg-white/5 rounded" />
+                  <div className="h-4 w-16 bg-white/5 rounded" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
       </SidebarLayout>
     );
   }

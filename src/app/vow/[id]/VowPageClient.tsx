@@ -15,6 +15,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { getVow, getSpectatorPool, contractDetails, getNetwork, getCurrentBlockHeight } from '@/lib/contract';
 import { VOW_TYPES, VOW_STATUS } from '@/lib/types';
 import { sanitize } from '@/lib/sanitize';
+import { useToast } from '@/components/Toast';
 
 const formatUTC = (date: Date) => {
   return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
@@ -56,6 +57,7 @@ function BurnAnimation() {
 export default function VowPageClient() {
   const { id } = useParams();
   const { doContractCall } = useConnect();
+  const { toast } = useToast();
   const [vow, setVow] = useState<any>(null);
   const [pool, setPool] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -194,7 +196,8 @@ export default function VowPageClient() {
       network: getNetwork(),
       anchorMode: AnchorMode.Any,
       postConditionMode: PostConditionMode.Allow,
-      onFinish: () => fetchData(),
+      onFinish: () => { toast('Bet submitted — will settle once the vow resolves.', 'success'); fetchData(); },
+      onCancel: () => toast('Transaction cancelled.', 'info'),
     });
   };
 
@@ -207,7 +210,8 @@ export default function VowPageClient() {
       network: getNetwork(),
       anchorMode: AnchorMode.Any,
       postConditionMode: PostConditionMode.Allow,
-      onFinish: () => fetchData(),
+      onFinish: () => { toast('Vote cast on-chain.', 'success'); fetchData(); },
+      onCancel: () => toast('Transaction cancelled.', 'info'),
     });
   };
 
@@ -222,9 +226,11 @@ export default function VowPageClient() {
       anchorMode: AnchorMode.Any,
       postConditionMode: PostConditionMode.Allow,
       onFinish: () => {
+        toast('Proof submitted — community adjudication window opening.', 'success');
         setProofUrl('');
         fetchData();
       },
+      onCancel: () => toast('Transaction cancelled.', 'info'),
     });
   };
 
@@ -237,7 +243,8 @@ export default function VowPageClient() {
       network: getNetwork(),
       anchorMode: AnchorMode.Any,
       postConditionMode: PostConditionMode.Allow,
-      onFinish: () => fetchData(),
+      onFinish: () => { toast('Failure settlement triggered on-chain.', 'success'); fetchData(); },
+      onCancel: () => toast('Transaction cancelled.', 'info'),
     });
   };
 
@@ -250,7 +257,8 @@ export default function VowPageClient() {
       network: getNetwork(),
       anchorMode: AnchorMode.Any,
       postConditionMode: PostConditionMode.Allow,
-      onFinish: () => fetchData(),
+      onFinish: () => { toast('Vow finalized — escrow distributed.', 'success'); fetchData(); },
+      onCancel: () => toast('Transaction cancelled.', 'info'),
     });
   };
 
@@ -264,7 +272,8 @@ export default function VowPageClient() {
       network: getNetwork(),
       anchorMode: AnchorMode.Any,
       postConditionMode: PostConditionMode.Allow,
-      onFinish: () => fetchData(),
+      onFinish: () => { toast('Challenge accepted — the battle is on.', 'success'); fetchData(); },
+      onCancel: () => toast('Transaction cancelled.', 'info'),
     });
   };
 

@@ -27,6 +27,8 @@ export const metadata: Metadata = {
   }
 };
 
+const plausibleDomain = process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -34,6 +36,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
+      <head>
+        {plausibleDomain && (
+          <script defer data-domain={plausibleDomain} src="https://plausible.io/js/script.js" />
+        )}
+      </head>
       <body className="min-h-screen bg-black antialiased selection:bg-white selection:text-black">
         <ErrorBoundary>
           <Providers>

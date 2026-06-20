@@ -98,11 +98,10 @@ export default function DashboardPage() {
       const created = updatedVows.filter(v => v.creator === address);
       setMyVows([...pending, ...created]);
 
-      // Spectator bets — check most recent 40 vow IDs
+      // Spectator bets — scan all cached vows (no arbitrary cap)
       setBetsLoading(true);
       const recentIds = [...updatedVows]
         .sort((a, b) => b.id - a.id)
-        .slice(0, 40)
         .map(v => v.id);
 
       const found: BetEntry[] = [];

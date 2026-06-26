@@ -1,21 +1,67 @@
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+﻿@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* === Semantic design tokens === */
 :root {
-  --brand-color: #8b5cf6;
+  --brand-color:        #8b5cf6;
+
+  --bg:                 #030303;
+  --bg-card:            #0a0a0a;
+  --bg-raised:          rgba(255, 255, 255, 0.05);
+  --bg-hover:           rgba(255, 255, 255, 0.10);
+  --fg:                 #ffffff;
+  --fg-muted:           #9ca3af;
+  --fg-subtle:          #6b7280;
+  --border:             rgba(255, 255, 255, 0.10);
+  --border-strong:      rgba(255, 255, 255, 0.20);
+  --grid-line:          rgba(255, 255, 255, 0.03);
+  --glass-bg:           rgba(10, 10, 12, 0.6);
+  --glass-border:       rgba(255, 255, 255, 0.08);
+  --glass-hover-border: rgba(255, 255, 255, 0.15);
+  --scrollbar-track:    #0a0a0a;
+  --scrollbar-thumb:    #333;
+  --scrollbar-thumb-hover: #555;
+}
+
+html.light {
+  --bg:                 #f3f3f5;
+  --bg-card:            #ffffff;
+  --bg-raised:          rgba(0, 0, 0, 0.04);
+  --bg-hover:           rgba(0, 0, 0, 0.08);
+  --fg:                 #0a0a0a;
+  --fg-muted:           #6b7280;
+  --fg-subtle:          #9ca3af;
+  --border:             rgba(0, 0, 0, 0.10);
+  --border-strong:      rgba(0, 0, 0, 0.20);
+  --grid-line:          rgba(0, 0, 0, 0.04);
+  --glass-bg:           rgba(255, 255, 255, 0.85);
+  --glass-border:       rgba(0, 0, 0, 0.08);
+  --glass-hover-border: rgba(0, 0, 0, 0.18);
+  --scrollbar-track:    #e5e5e5;
+  --scrollbar-thumb:    #bbb;
+  --scrollbar-thumb-hover: #888;
 }
 
 @layer base {
 
   body {
-    @apply bg-[#030303] text-gray-200 font-space overflow-x-hidden relative min-h-screen;
+    background-color: var(--bg);
+    color: var(--fg);
+    @apply font-space overflow-x-hidden relative min-h-screen;
     background-image:
       radial-gradient(circle at 15% 50%, rgba(40, 10, 80, 0.15), transparent 25%),
       radial-gradient(circle at 85% 30%, rgba(10, 40, 80, 0.15), transparent 25%);
     background-attachment: fixed;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  html.light body {
+    background-image:
+      radial-gradient(circle at 15% 50%, rgba(139, 92, 246, 0.05), transparent 25%),
+      radial-gradient(circle at 85% 30%, rgba(51, 130, 246, 0.05), transparent 25%);
   }
 
   body::before {
@@ -26,8 +72,8 @@
     right: 0;
     bottom: 0;
     background-image:
-      linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
     background-size: 50px 50px;
     z-index: -1;
     pointer-events: none;
@@ -41,23 +87,32 @@
   h4,
   h5,
   h6 {
-    @apply font-bebas tracking-wider text-white;
+    @apply font-bebas tracking-wider;
+    color: var(--fg);
   }
 }
 
 @layer components {
   .glass-card {
-    background: rgba(10, 10, 12, 0.6);
+    background: var(--glass-bg);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--glass-border);
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.02);
     @apply rounded-xl transition-all duration-300;
   }
 
   .glass-card:hover {
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid var(--glass-hover-border);
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(255, 255, 255, 0.05);
+  }
+
+  html.light .glass-card {
+    box-shadow: 0 4px 24px 0 rgba(0, 0, 0, 0.08);
+  }
+
+  html.light .glass-card:hover {
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.14);
   }
 
   .glow-burn {
@@ -73,11 +128,25 @@
   }
 
   .btn-primary {
-    @apply px-8 py-3 bg-white text-black font-bold uppercase transition-all duration-300 hover:bg-gray-200 hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] active:scale-95 font-bebas rounded-md tracking-widest text-lg;
+    @apply px-8 py-3 font-bold uppercase transition-all duration-300 active:scale-95 font-bebas rounded-md tracking-widest text-lg;
+    background-color: var(--fg);
+    color: var(--bg);
+  }
+
+  .btn-primary:hover {
+    opacity: 0.85;
   }
 
   .btn-outline {
-    @apply px-8 py-3 border border-white/30 text-white font-bold uppercase transition-all duration-300 hover:bg-white/10 hover:border-white hover:shadow-[0_0_15px_rgba(255,255,255,0.2)] active:scale-95 font-bebas rounded-md tracking-widest text-lg;
+    @apply px-8 py-3 font-bold uppercase transition-all duration-300 active:scale-95 font-bebas rounded-md tracking-widest text-lg;
+    border: 1px solid var(--border-strong);
+    color: var(--fg);
+    background: transparent;
+  }
+
+  .btn-outline:hover {
+    background: var(--bg-raised);
+    border-color: var(--fg);
   }
 
   .status-badge {
@@ -91,16 +160,16 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #0a0a0a;
+  background: var(--scrollbar-track);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #333;
+  background: var(--scrollbar-thumb);
   border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* Animations */

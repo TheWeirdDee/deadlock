@@ -8,6 +8,7 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://deadlock.wtf'),
   title: "DEADLOCK | Public Accountability on Bitcoin",
   description: "Put your STX where your mouth is. Public accountability vows secured by Stacks and Bitcoin.",
+  manifest: "/manifest.json",
   openGraph: {
     title: "DEADLOCK | Public Accountability on Bitcoin",
     description: "Put your STX where your mouth is. Stake it, ship it, or lose it. On-chain accountability for builders.",
@@ -27,8 +28,6 @@ export const metadata: Metadata = {
   }
 };
 
-const plausibleDomain = process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN;
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -36,11 +35,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <head>
-        {plausibleDomain && (
-          <script defer data-domain={plausibleDomain} src="https://plausible.io/js/script.js" />
-        )}
-      </head>
       <body className="min-h-screen bg-black antialiased selection:bg-white selection:text-black">
         <ErrorBoundary>
           <Providers>

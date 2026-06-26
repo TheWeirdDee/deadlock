@@ -1,30 +1,12 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SidebarLayout } from '@/components/SidebarLayout';
-import { getVowCount, getVow } from '@/lib/contract';
+import { getVowCount, getVow, getCurrentBlockHeight } from '@/lib/contract';
 import { VOW_TYPES, VOW_STATUS } from '@/lib/types';
 import Link from 'next/link';
-
-const LEADERBOARD_CACHE_KEY = 'deadlock_leaderboard_cache';
-const LEADERBOARD_TTL_MS = 10 * 60 * 1000;
-
-function loadLeaderboardCache(): LeaderboardEntry[] | null {
-  try {
-    const raw = localStorage.getItem(LEADERBOARD_CACHE_KEY);
-    if (!raw) return null;
-    const { data, timestamp } = JSON.parse(raw);
-    if (Date.now() - timestamp < LEADERBOARD_TTL_MS) return data;
-  } catch {}
-  return null;
-}
-
-function saveLeaderboardCache(data: LeaderboardEntry[]) {
-  try {
-    localStorage.setItem(LEADERBOARD_CACHE_KEY, JSON.stringify({ data, timestamp: Date.now() }));
-  } catch {}
-}
+import { getWalletFirstBlock, walletAgeLabel } from '@/lib/walletAge';
 
 interface LeaderboardEntry {
   address: string;
@@ -41,15 +23,12 @@ export default function LeaderboardPage() {
   const [loading, setLoading] = useState(true);
   const [syncProgress, setSyncProgress] = useState({ current: 0, total: 0 });
   const [sortBy, setSortBy] = useState<'reputation' | 'winRate' | 'staked'>('reputation');
+  const [currentBlock, setCurrentBlock] = useState(0);
+  const [walletAges, setWalletAges] = useState<Record<string, number | null>>({});
 
   useEffect(() => {
-    const cached = loadLeaderboardCache();
-    if (cached) {
-      setLeaderboard(cached);
-      setLoading(false);
-    } else {
-      syncAndAggregate();
-    }
+    syncAndAggregate();
+    getCurrentBlockHeight().then(b => setCurrentBlock(b));
   }, []);
 
   async function syncAndAggregate() {
@@ -160,7 +139,18 @@ export default function LeaderboardPage() {
 
       const rawLeaderboard = Object.values(statsMap);
       setLeaderboard(rawLeaderboard);
-      saveLeaderboardCache(rawLeaderboard);
+
+      // Fetch wallet ages for top 20 (staggered to avoid rate limits)
+      const top20 = rawLeaderboard
+        .sort((a, b) => b.reputation - a.reputation)
+        .slice(0, 20)
+        .map(e => e.address);
+      const ages: Record<string, number | null> = {};
+      for (const addr of top20) {
+        ages[addr] = await getWalletFirstBlock(addr);
+        await new Promise(r => setTimeout(r, 150));
+      }
+      setWalletAges(ages);
     } catch (e) {
       console.error('Error loading leaderboard:', e);
     } finally {
@@ -186,13 +176,13 @@ export default function LeaderboardPage() {
     if (index === 0) return 'from-yellow-400/20 via-amber-500/10 to-transparent border-yellow-500/40 text-yellow-400';
     if (index === 1) return 'from-slate-300/20 via-gray-400/10 to-transparent border-gray-400/40 text-gray-300';
     if (index === 2) return 'from-amber-700/20 via-amber-800/10 to-transparent border-amber-800/40 text-amber-600';
-    return 'from-white/5 to-transparent border-white/10 text-gray-400';
+    return 'from-white/5 to-transparent border-line text-gray-400';
   };
 
   const getRankBadge = (index: number) => {
-    if (index === 0) return '🥇 GOLD';
-    if (index === 1) return '🥈 SILVER';
-    if (index === 2) return '🥉 BRONZE';
+    if (index === 0) return 'ðŸ¥‡ GOLD';
+    if (index === 1) return 'ðŸ¥ˆ SILVER';
+    if (index === 2) return 'ðŸ¥‰ BRONZE';
     return `#${index + 1}`;
   };
 
@@ -202,19 +192,19 @@ export default function LeaderboardPage() {
     <SidebarLayout activePage="leaderboard">
       <div className="space-y-12 max-w-6xl mt-4 mb-24 relative z-10">
         
-        <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-white/10 pb-6 gap-4">
+        <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-line pb-6 gap-4">
           <div>
             <h2 className="text-4xl font-bold font-bebas tracking-wider mb-2">REPUTATION LEADERBOARD</h2>
-            <p className="text-gray-400 text-sm font-space leading-relaxed">
+            <p className="text-ink-muted text-sm font-space leading-relaxed">
               Global rankings based on vow commitments, completion ratios, and total value locked.
             </p>
           </div>
 
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => { localStorage.removeItem(LEADERBOARD_CACHE_KEY); syncAndAggregate(); }}
+            <button 
+              onClick={syncAndAggregate} 
               disabled={loading}
-              className="text-xs px-4 py-2 border border-white/20 hover:border-white/50 hover:bg-white/5 disabled:opacity-50 text-white font-bold tracking-widest uppercase rounded-full transition-all duration-300 font-bebas flex items-center gap-2"
+              className="text-xs px-4 py-2 border border-white/20 hover:border-line0 hover:bg-surface-raised disabled:opacity-50 text-ink font-bold tracking-widest uppercase rounded-full transition-all duration-300 font-bebas flex items-center gap-2"
             >
               {loading ? (
                 <>
@@ -232,7 +222,7 @@ export default function LeaderboardPage() {
               <span className="text-purple-400 uppercase">Fetching vows from Stacks mainnet...</span>
               <span>{syncProgress.current} / {syncProgress.total} vows</span>
             </div>
-            <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+            <div className="w-full h-1.5 bg-surface-raised rounded-full overflow-hidden">
               <div 
                 className="h-full bg-gradient-to-r from-purple-500 to-blue-500 transition-all duration-300"
                 style={{ width: `${(syncProgress.current / syncProgress.total) * 100}%` }}
@@ -242,8 +232,8 @@ export default function LeaderboardPage() {
         )}
 
         {!loading && sortedLeaderboard.length === 0 ? (
-          <div className="text-center py-20 border border-dashed border-white/20 rounded-xl bg-white/5">
-            <p className="text-gray-400 font-space tracking-wider">No active vows found on-chain yet.</p>
+          <div className="text-center py-20 border border-dashed border-white/20 rounded-xl bg-surface-raised">
+            <p className="text-ink-muted font-space tracking-wider">No active vows found on-chain yet.</p>
           </div>
         ) : (
           <>
@@ -257,7 +247,7 @@ export default function LeaderboardPage() {
                     key={entry.address}
                     className={`bg-gradient-to-b ${getRankColor(idx)} border rounded-2xl p-6 flex flex-col justify-between h-56 shadow-[0_0_30px_rgba(255,255,255,0.02)] relative overflow-hidden`}
                   >
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl pointer-events-none"></div>
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-surface-raised rounded-full blur-3xl pointer-events-none"></div>
 
                     <div className="flex justify-between items-start">
                       <span className="text-[10px] font-bold tracking-widest uppercase border border-current px-2.5 py-1 rounded-full bg-black/40">
@@ -272,10 +262,10 @@ export default function LeaderboardPage() {
                       <h4 className="text-base font-mono font-bold tracking-tight text-white mb-1 truncate">
                         {formatAddress(entry.address)}
                       </h4>
-                      <p className="text-xs text-gray-500 font-mono truncate">{entry.address}</p>
+                      <p className="text-xs text-ink-subtle font-mono truncate">{entry.address}</p>
                     </div>
 
-                    <div className="flex justify-between items-end border-t border-white/5 pt-4">
+                    <div className="flex justify-between items-end border-t border-line pt-4">
                       <div>
                         <p className="text-[8px] text-gray-500 tracking-widest uppercase font-bold">STAKED VOLUME</p>
                         <p className="text-lg font-bebas font-bold text-white tracking-wide">{entry.totalStaked.toFixed(1)} STX</p>
@@ -290,24 +280,24 @@ export default function LeaderboardPage() {
               </div>
             )}
 
-            <div className="flex justify-between items-center border-b border-white/10 pb-4">
+            <div className="flex justify-between items-center border-b border-line pb-4">
               <h3 className="text-xl font-bold font-bebas tracking-widest uppercase">GLOBAL RANKINGS</h3>
               <div className="flex gap-4 text-xs font-bold tracking-widest">
                 <button 
                   onClick={() => setSortBy('reputation')} 
-                  className={`transition-colors ${sortBy === 'reputation' ? 'text-purple-400' : 'text-gray-500 hover:text-white'}`}
+                  className={`transition-colors ${sortBy === 'reputation' ? 'text-purple-400' : 'text-ink-subtle hover:text-ink'}`}
                 >
                   REPUTATION
                 </button>
                 <button 
                   onClick={() => setSortBy('winRate')} 
-                  className={`transition-colors ${sortBy === 'winRate' ? 'text-purple-400' : 'text-gray-500 hover:text-white'}`}
+                  className={`transition-colors ${sortBy === 'winRate' ? 'text-purple-400' : 'text-ink-subtle hover:text-ink'}`}
                 >
                   SUCCESS RATE
                 </button>
                 <button 
                   onClick={() => setSortBy('staked')} 
-                  className={`transition-colors ${sortBy === 'staked' ? 'text-purple-400' : 'text-gray-500 hover:text-white'}`}
+                  className={`transition-colors ${sortBy === 'staked' ? 'text-purple-400' : 'text-ink-subtle hover:text-ink'}`}
                 >
                   TOTAL STAKED
                 </button>
@@ -318,7 +308,7 @@ export default function LeaderboardPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse min-w-[700px]">
                   <thead>
-                    <tr className="text-[10px] text-gray-500 uppercase tracking-widest bg-white/5 border-b border-white/10">
+                    <tr className="text-[10px] text-gray-500 uppercase tracking-widest bg-surface-raised border-b border-line">
                       <th className="p-4 pl-6 font-normal w-24">Rank</th>
                       <th className="p-4 font-normal">Wallet Address</th>
                       <th className="p-4 font-normal text-center">Total Vows</th>
@@ -339,11 +329,11 @@ export default function LeaderboardPage() {
                         <motion.tr 
                           layout
                           key={entry.address} 
-                          className="border-b border-white/5 hover:bg-white/5 transition-colors text-sm"
+                          className="border-b border-line hover:bg-surface-raised transition-colors text-sm"
                         >
                           <td className="p-4 pl-6 font-bold font-mono text-gray-400">
                             {index < 3 ? (
-                              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold bg-white/5 border ${
+                              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold bg-surface-raised border ${
                                 index === 0 ? 'border-yellow-500/40 text-yellow-400 bg-yellow-500/5' :
                                 index === 1 ? 'border-gray-400/40 text-gray-300 bg-gray-400/5' :
                                 'border-amber-800/40 text-amber-600 bg-amber-800/5'
@@ -352,22 +342,34 @@ export default function LeaderboardPage() {
                               </span>
                             ) : `#${index + 1}`}
                           </td>
-                          <td className="p-4 font-mono font-bold text-gray-300 select-all">
-                            {entry.address}
+                          <td className="p-4 font-mono font-bold text-ink select-all">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Link href={`/profile/${entry.address}`} className="hover:text-purple-400 transition-colors truncate max-w-[220px]">
+                                {entry.address}
+                              </Link>
+                              {(() => {
+                                const badge = walletAgeLabel(walletAges[entry.address] ?? null, currentBlock);
+                                return badge ? (
+                                  <span title={badge.title} className={`text-[8px] font-bold px-1.5 py-0.5 border rounded tracking-widest flex-shrink-0 ${badge.color}`}>
+                                    {badge.label}
+                                  </span>
+                                ) : null;
+                              })()}
+                            </div>
                           </td>
-                          <td className="p-4 text-center text-gray-400 font-mono">{entry.totalVows}</td>
+                          <td className="p-4 text-center text-ink-muted font-mono">{entry.totalVows}</td>
                           <td className="p-4 text-center text-green-400 font-bold font-mono">{entry.completedVows}</td>
                           <td className="p-4 text-center text-red-500 font-bold font-mono">{entry.failedVows}</td>
                           <td className="p-4 text-center">
                             <span className={`text-xs font-mono font-bold ${
                               winRate >= 75 ? 'text-green-400' :
                               winRate >= 50 ? 'text-yellow-400' :
-                              winRate > 0 ? 'text-red-400' : 'text-gray-600'
+                              winRate > 0 ? 'text-red-400' : 'text-ink-subtle'
                             }`}>
                               {winRate.toFixed(0)}%
                             </span>
                           </td>
-                          <td className="p-4 text-right font-bold text-gray-300 font-mono">
+                          <td className="p-4 text-right font-bold text-ink-muted font-mono">
                             {entry.totalStaked.toFixed(1)} STX
                           </td>
                           <td className="p-4 pr-6 text-right font-bold font-bebas tracking-wide text-purple-400 text-lg">
@@ -386,3 +388,4 @@ export default function LeaderboardPage() {
     </SidebarLayout>
   );
 }
+

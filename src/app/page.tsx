@@ -14,6 +14,65 @@ import { VOW_TYPES, VOW_STATUS } from '@/lib/types';
 import { CreateVowModal } from '@/components/CreateVowModal';
 import { Header } from '@/components/Header';
 import { VowCard } from '@/components/VowCard';
+import { OnboardingModal } from '@/components/OnboardingModal';
+import { useToast } from '@/components/Toast';
+
+const WAITLIST_KEY = 'deadlock_waitlist';
+
+function WaitlistForm() {
+  const { toast } = useToast();
+  const [email, setEmail] = useState('');
+  const [submitted, setSubmitted] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    try { return !!localStorage.getItem(WAITLIST_KEY); } catch { return false; }
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    try {
+      const existing = JSON.parse(localStorage.getItem(WAITLIST_KEY) || '[]');
+      if (!existing.includes(email)) {
+        localStorage.setItem(WAITLIST_KEY, JSON.stringify([...existing, email]));
+      }
+    } catch {}
+    setSubmitted(true);
+    toast('You\'re on the list — we\'ll reach out when new features drop.', 'success');
+  };
+
+  if (submitted) {
+    return (
+      <div className="relative flex items-center bg-green-500/10 border border-green-500/30 rounded-full pl-4 pr-4 py-2 w-full max-w-sm">
+        <svg className="w-4 h-4 text-green-400 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+        <span className="text-xs text-green-400 font-bold tracking-widest">YOU'RE ON THE LIST</span>
+      </div>
+    );
+  }
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="relative flex items-center bg-surface-raised border border-line rounded-full pl-4 pr-1.5 py-1.5 w-full max-w-sm hover:border-ink-muted focus-within:border-line-strong transition-colors"
+    >
+      <input
+        type="email"
+        required
+        value={email}
+        onChange={e => setEmail(e.target.value)}
+        placeholder="Join the waitlist for updates..."
+        className="bg-transparent outline-none border-none text-xs text-ink placeholder-ink-subtle flex-grow font-space min-w-0"
+      />
+      <button
+        type="submit"
+        className="w-8 h-8 bg-white text-black hover:bg-gray-200 transition-colors rounded-full flex items-center justify-center flex-shrink-0 active:scale-95 shadow-md"
+      >
+        <svg className="w-4 h-4 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+        </svg>
+      </button>
+    </form>
+  );
+}
 
 export default function Home() {
   const { doOpenAuth } = useConnect();
@@ -173,16 +232,16 @@ export default function Home() {
             <svg className="w-3.5 h-3.5 text-purple-400 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
             </svg>
-            <span className="text-[10px] font-bold tracking-widest text-gray-300 uppercase">SECURED BY BITCOIN</span>
+            <span className="text-[10px] font-bold tracking-widest text-ink-muted uppercase">SECURED BY BITCOIN</span>
           </div>
 
           <h2 className="text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight uppercase leading-[0.95] mb-6">
             PUT YOUR <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-purple-500 to-blue-500 drop-shadow-[0_0_30px_rgba(168,85,247,0.3)]">STX</span> WHERE YOUR MOUTH IS.
           </h2>
 
-          <p className="text-base sm:text-lg text-gray-400 mb-8 leading-relaxed max-w-xl">
+          <p className="text-base sm:text-lg text-ink-muted mb-8 leading-relaxed max-w-xl">
             Secure, decentralized accountability vows. Burn it, give it to a rival, or support a cause. 
-            <span className="text-white font-bold block mt-1">Public failure is the ultimate motivator.</span>
+            <span className="text-ink font-bold block mt-1">Public failure is the ultimate motivator.</span>
           </p>
 
           <div className="flex flex-wrap items-center gap-4">
@@ -193,7 +252,7 @@ export default function Home() {
               CREATE NEW VOW 
               <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
             </button>
-            <a href="#feed" className="px-8 py-3.5 border border-white/20 hover:border-white/50 text-white font-bold uppercase rounded-full tracking-widest text-sm hover:bg-white/5 transition-all active:scale-95 duration-300 font-bebas">
+            <a href="#feed" className="px-8 py-3.5 border border-line-strong hover:border-ink-muted text-ink font-bold uppercase rounded-full tracking-widest text-sm hover:bg-surface-raised transition-all active:scale-95 duration-300 font-bebas">
               BROWSE ALL
             </a>
           </div>
@@ -206,8 +265,8 @@ export default function Home() {
 
           <div className="absolute top-[20%] left-[15%] w-2 h-2 bg-purple-500 rotate-45 animate-pulse"></div>
           <div className="absolute bottom-[25%] right-[10%] w-1.5 h-1.5 bg-blue-400 rotate-45"></div>
-          <div className="absolute top-[30%] right-[15%] text-[10px] text-gray-500 font-bold select-none">*</div>
-          <div className="absolute bottom-[20%] left-[25%] text-xs text-gray-600 font-bold select-none">✦</div>
+          <div className="absolute top-[30%] right-[15%] text-[10px] text-ink-subtle font-bold select-none">*</div>
+          <div className="absolute bottom-[20%] left-[25%] text-xs text-ink-subtle font-bold select-none">✦</div>
           <div className="absolute top-[10%] right-[30%] w-1 h-1 bg-white rounded-full"></div>
 
           <div className="relative w-[180px] sm:w-[230px] h-[180px] sm:h-[230px] rounded-full bg-gradient-to-tr from-purple-900/40 via-blue-900/30 to-black/80 border border-white/15 p-2 overflow-hidden shadow-[0_0_50px_rgba(147,51,234,0.2)]">
@@ -234,34 +293,34 @@ export default function Home() {
               <div>
                 <h4 className="text-3xl sm:text-5xl font-bold font-bebas text-white tracking-wider mb-1">
                   {stats === null ? (
-                    <span className="text-gray-600 animate-pulse">---</span>
+                    <span className="text-ink-subtle animate-pulse">---</span>
                   ) : (
                     <>{stats.lockedSTX.toFixed(1)}<span className="text-purple-500"> STX</span></>
                   )}
                 </h4>
-                <p className="text-[10px] tracking-widest text-gray-500 uppercase font-bold">STX ESCROWED</p>
+                <p className="text-[10px] tracking-widest text-ink-subtle uppercase font-bold">STX ESCROWED</p>
               </div>
 
               <div className="border-l border-white/10 pl-6">
                 <h4 className="text-3xl sm:text-5xl font-bold font-bebas text-white tracking-wider mb-1">
                   {stats === null ? (
-                    <span className="text-gray-600 animate-pulse">---</span>
+                    <span className="text-ink-subtle animate-pulse">---</span>
                   ) : (
                     <>{stats.activeVowsCount}<span className="text-blue-400"> ACTIVE</span></>
                   )}
                 </h4>
-                <p className="text-[10px] tracking-widest text-gray-500 uppercase font-bold">ACTIVE VOWS</p>
+                <p className="text-[10px] tracking-widest text-ink-subtle uppercase font-bold">ACTIVE VOWS</p>
               </div>
 
               <div className="border-l border-white/10 pl-6">
                 <h4 className="text-3xl sm:text-5xl font-bold font-bebas text-white tracking-wider mb-1">
                   {stats === null ? (
-                    <span className="text-gray-600 animate-pulse">---</span>
+                    <span className="text-ink-subtle animate-pulse">---</span>
                   ) : (
                     <>{stats.totalVotesCast}<span className="text-green-400"> VOTES</span></>
                   )}
                 </h4>
-                <p className="text-[10px] tracking-widest text-gray-500 uppercase font-bold">VOTES CAST</p>
+                <p className="text-[10px] tracking-widest text-ink-subtle uppercase font-bold">VOTES CAST</p>
               </div>
             </div>
 
@@ -279,25 +338,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <form
-                onSubmit={(e) => { e.preventDefault(); alert('Subscribed to waitlist!'); }}
-                className="relative flex items-center bg-white/5 border border-white/10 rounded-full pl-4 pr-1.5 py-1.5 w-full max-w-sm hover:border-white/20 focus-within:border-white/30 transition-colors"
-              >
-                <input
-                  type="email"
-                  required
-                  placeholder="Join the waitlist for updates..."
-                  className="bg-transparent outline-none border-none text-xs text-white placeholder-gray-500 flex-grow font-space min-w-0"
-                />
-                <button
-                  type="submit"
-                  className="w-8 h-8 bg-white text-black hover:bg-gray-200 transition-colors rounded-full flex items-center justify-center flex-shrink-0 active:scale-95 shadow-md"
-                >
-                  <svg className="w-4 h-4 text-black transform rotate-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                  </svg>
-                </button>
-              </form>
+              <WaitlistForm />
             </div>
           </div>
         </div>
@@ -329,14 +370,14 @@ export default function Home() {
               {!userData ? (
                 <button
                   onClick={handleLogin}
-                  className="px-8 py-4 bg-white/5 border border-white/10 hover:border-white/30 text-white font-bold uppercase rounded-full tracking-widest text-sm hover:bg-white/10 transition-all duration-300 font-bebas flex items-center gap-2"
+                  className="px-8 py-4 bg-surface-raised border border-line hover:border-white/30 text-white font-bold uppercase rounded-full tracking-widest text-sm hover:bg-white/10 transition-all duration-300 font-bebas flex items-center gap-2"
                 >
                   CONNECT WALLET TO VIEW MORE
                 </button>
               ) : (
                 <Link
                   href="/feed"
-                  className="px-8 py-4 bg-white/5 border border-white/10 hover:border-purple-500/50 text-white font-bold uppercase rounded-full tracking-widest text-sm hover:bg-purple-500/10 transition-all duration-300 font-bebas flex items-center gap-2"
+                  className="px-8 py-4 bg-surface-raised border border-line hover:border-purple-500/50 text-white font-bold uppercase rounded-full tracking-widest text-sm hover:bg-purple-500/10 transition-all duration-300 font-bebas flex items-center gap-2"
                 >
                   VIEW ALL IN DASHBOARD →
                 </Link>
@@ -347,6 +388,7 @@ export default function Home() {
       </section>
 
       <CreateVowModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <OnboardingModal />
 
       <footer className="w-full max-w-6xl mt-32 py-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8">
         <div className="text-xs opacity-30 uppercase tracking-widest">© 2026 DEADLOCK PROTOCOL | SECURED BY BITCOIN</div>

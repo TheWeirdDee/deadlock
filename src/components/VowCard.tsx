@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { VOW_TYPES, VOW_STATUS } from '@/lib/types';
 import { getCurrentBlockHeight } from '@/lib/contract';
 import { sanitize } from '@/lib/sanitize';
+import { useSTXPrice, formatUSD } from '@/lib/useSTXPrice';
 
 function getTypeColor(vowType: number): string {
   if (vowType === VOW_TYPES.BURN) return 'border-purple-400 text-purple-400';
@@ -27,6 +28,7 @@ export function VowCard({ vow, index }: { vow: any; index: number }) {
   const typeLabel = getTypeLabel(Number(vow.vowType || vow['vow-type']));
   const stake = Number(vow.stakeAmount ?? vow['stake-amount'] ?? 0) / 1_000_000;
   const deadline = Number(vow.deadlineBlock ?? vow['deadline-block'] ?? 0);
+  const stxPrice = useSTXPrice();
 
   const [currentBlock, setCurrentBlock] = useState<number | null>(null);
 
@@ -57,7 +59,7 @@ export function VowCard({ vow, index }: { vow: any; index: number }) {
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.5, delay: index * 0.08 }}
       whileHover={{ y: -5 }}
-      className={`glass-card p-6 flex flex-col h-full border-t-2 border-white/10`}
+      className={`glass-card p-6 flex flex-col h-full border-t-2 border-line`}
     >
       <div className="flex justify-between items-start mb-4">
         <span className={`status-badge ${getTypeColor(Number(vow.vowType || vow['vow-type']))}`} aria-label={`Vow type: ${typeLabel}`}>
@@ -84,10 +86,15 @@ export function VowCard({ vow, index }: { vow: any; index: number }) {
         {vow.description === 'Farming description' ? 'A public vow has been made. The stakes are high, and the world is watching.' : sanitize(vow.description ?? '')}
       </p>
 
-      <div className="mt-auto pt-6 border-t border-white/5 space-y-4">
+      <div className="mt-auto pt-6 border-t border-line space-y-4">
         <div className="flex justify-between items-center">
           <span className="text-[10px] opacity-40 uppercase">STAKE</span>
-          <span className="font-bold text-xl">{stake} STX</span>
+          <div className="text-right">
+            <span className="font-bold text-xl">{stake} STX</span>
+            {formatUSD(stake, stxPrice) && (
+              <span className="block text-[10px] text-ink-muted">{formatUSD(stake, stxPrice)}</span>
+            )}
+          </div>
         </div>
 
         <div className="flex justify-between items-center">

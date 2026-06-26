@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useConnect } from '@stacks/connect-react';
@@ -12,6 +12,8 @@ import { VowCard } from '@/components/VowCard';
 import { useToast } from '@/components/Toast';
 import { VOW_STATUS } from '@/lib/types';
 import { useRouter } from 'next/navigation';
+import { scheduleDeadlineReminders } from '@/lib/deadlineNotifications';
+import { useSTXPrice, formatUSD } from '@/lib/useSTXPrice';
 
 interface BetEntry {
   vowId: number;
@@ -34,6 +36,8 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [betsLoading, setBetsLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [referralCopied, setReferralCopied] = useState(false);
+  const stxPrice = useSTXPrice();
 
   const userSessionRef = useRef<UserSession | null>(null);
   if (!userSessionRef.current && typeof window !== 'undefined') {
@@ -44,7 +48,6 @@ export default function DashboardPage() {
 
   const fetchDashboard = useCallback(async (address: string) => {
     try {
-      // Load full vow cache for accurate stats
       let cachedVows: any[] = [];
       let lastSyncedId = 0;
       try {
@@ -58,7 +61,6 @@ export default function DashboardPage() {
         }
       } catch {}
 
-      // Fetch any new vows since last sync
       const chainCount = await getVowCount();
       const block = await getCurrentBlockHeight();
       setCurrentBlock(block);
@@ -80,7 +82,6 @@ export default function DashboardPage() {
         } catch {}
       }
 
-      // Merge pending (locally submitted, not yet on chain)
       let pending: any[] = [];
       try {
         const raw = localStorage.getItem('pending_vows');
@@ -98,10 +99,17 @@ export default function DashboardPage() {
       const created = updatedVows.filter(v => v.creator === address);
       setMyVows([...pending, ...created]);
 
-      // Spectator bets — scan all cached vows (no arbitrary cap)
+      scheduleDeadlineReminders(block, created.map(v => ({
+        id: v.id,
+        title: v.title ?? '',
+        deadlineBlock: Number(v.deadlineBlock ?? v['deadline-block'] ?? 0),
+        status: Number(v.status ?? 0),
+      })));
+
       setBetsLoading(true);
       const recentIds = [...updatedVows]
         .sort((a, b) => b.id - a.id)
+        .slice(0, 40)
         .map(v => v.id);
 
       const found: BetEntry[] = [];
@@ -183,60 +191,48 @@ export default function DashboardPage() {
     router.push('/');
   };
 
+  const handleExportCSV = () => {
+    const STATUS_LABELS: Record<number, string> = { 1: 'Active', 2: 'Completed', 3: 'Failed', 4: 'Challenged' };
+    const TYPE_LABELS: Record<number, string> = { 1: 'Burn', 2: 'Rival', 3: 'Cause' };
+
+    const headers = ['ID', 'Title', 'Type', 'Status', 'Stake (STX)', 'Deadline Block', 'Created Block', 'Settled Block', 'Proof URL'];
+    const rows = myVows
+      .filter(v => v.status !== 'PENDING')
+      .map(v => [
+        v.id,
+        `"${(v.title ?? '').replace(/"/g, '""')}"`,
+        TYPE_LABELS[Number(v.vowType ?? v['vow-type'] ?? 0)] ?? '',
+        STATUS_LABELS[Number(v.status ?? 0)] ?? '',
+        (Number(v.stakeAmount ?? v['stake-amount'] ?? 0) / 1_000_000).toFixed(6),
+        v.deadlineBlock ?? v['deadline-block'] ?? '',
+        v.createdAt ?? v['created-at'] ?? '',
+        v.settledAt ?? v['settled-at'] ?? '',
+        v.proofUrl ?? v['proof-url'] ?? '',
+      ].join(','));
+
+    const csv = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `deadlock-vows-${userAddress?.slice(0, 8) ?? 'export'}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('CSV exported.', 'success');
+  };
+
   if (loading) {
     return (
       <SidebarLayout activePage="dashboard">
-        <section className="w-full max-w-6xl mt-4 mb-24 z-10 relative space-y-12">
-          {/* Welcome header skeleton */}
-          <div className="glass-card p-8 flex flex-col md:flex-row justify-between items-start md:items-center border-t-2 border-purple-500/30 gap-6 animate-pulse">
-            <div className="space-y-3 flex-1">
-              <div className="h-8 w-48 bg-white/10 rounded" />
-              <div className="h-4 w-72 bg-white/5 rounded" />
-            </div>
-            <div className="flex gap-8 items-center flex-wrap">
-              <div className="text-right space-y-2">
-                <div className="h-3 w-16 bg-white/5 rounded ml-auto" />
-                <div className="h-6 w-12 bg-white/10 rounded ml-auto" />
-              </div>
-              <div className="text-right space-y-2">
-                <div className="h-3 w-20 bg-white/5 rounded ml-auto" />
-                <div className="h-6 w-16 bg-white/10 rounded ml-auto" />
-              </div>
-              <div className="h-12 w-36 bg-white/10 rounded-full" />
-            </div>
-          </div>
-
-          {/* Vow cards skeleton */}
-          <div>
-            <div className="h-8 w-32 bg-white/10 rounded mb-6 animate-pulse" />
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="h-56 glass-card animate-pulse bg-white/5" />
-              ))}
-            </div>
-          </div>
-
-          {/* Bets table skeleton */}
-          <div>
-            <div className="h-8 w-48 bg-white/10 rounded mb-6 animate-pulse" />
-            <div className="glass-card p-6 space-y-4 animate-pulse">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="flex gap-4 py-3 border-b border-white/5">
-                  <div className="h-4 flex-1 bg-white/10 rounded" />
-                  <div className="h-4 w-20 bg-white/5 rounded" />
-                  <div className="h-4 w-16 bg-white/5 rounded" />
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+        <div className="flex-grow flex items-center justify-center h-full min-h-[50vh]">
+          <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+        </div>
       </SidebarLayout>
     );
   }
 
   const userAddress = userData?.profile?.stxAddress?.mainnet || userData?.profile?.stxAddress?.testnet;
 
-  // Stats from real data
   const settledVows = myVows.filter(v => {
     const s = Number(v.status);
     return s === VOW_STATUS.COMPLETED || s === VOW_STATUS.FAILED;
@@ -250,7 +246,6 @@ export default function DashboardPage() {
     0
   );
 
-  // Action-required vows: active + past deadline (need claim-failure or proof submission)
   const actionRequired = myVows.filter(v => {
     const status = Number(v.status);
     const deadline = Number(v.deadlineBlock ?? v['deadline-block'] ?? 0);
@@ -261,6 +256,21 @@ export default function DashboardPage() {
   });
 
   const activeVows = myVows.filter(v => Number(v.status) === VOW_STATUS.ACTIVE);
+
+  const sortedSettled = [...myVows]
+    .filter(v => Number(v.status) === VOW_STATUS.COMPLETED || Number(v.status) === VOW_STATUS.FAILED)
+    .sort((a, b) => Number(b.settledAt ?? b['settled-at'] ?? 0) - Number(a.settledAt ?? a['settled-at'] ?? 0));
+  let currentStreak = 0;
+  for (const v of sortedSettled) {
+    if (Number(v.status) === VOW_STATUS.COMPLETED) currentStreak++;
+    else break;
+  }
+  let longestStreak = 0;
+  let streak = 0;
+  for (const v of [...sortedSettled].reverse()) {
+    if (Number(v.status) === VOW_STATUS.COMPLETED) { streak++; longestStreak = Math.max(longestStreak, streak); }
+    else streak = 0;
+  }
 
   return (
     <SidebarLayout activePage="dashboard">
@@ -276,9 +286,9 @@ export default function DashboardPage() {
           </div>
           <div className="flex gap-8 items-center flex-wrap">
             <div className="text-right">
-              <p className="text-[10px] text-gray-500 uppercase tracking-widest">Win Rate</p>
+              <p className="text-[10px] text-ink-subtle uppercase tracking-widest">Win Rate</p>
               <p className={`text-xl font-bold font-bebas ${
-                winRate === null ? 'text-gray-500' :
+                winRate === null ? 'text-ink-subtle' :
                 winRate >= 75 ? 'text-green-400' :
                 winRate >= 50 ? 'text-yellow-400' : 'text-red-400'
               }`}>
@@ -286,26 +296,83 @@ export default function DashboardPage() {
               </p>
             </div>
             <div className="text-right">
-              <p className="text-[10px] text-gray-500 uppercase tracking-widest">Total Staked</p>
+              <p className="text-[10px] text-ink-subtle uppercase tracking-widest">Current Streak</p>
+              <p className={`text-xl font-bold font-bebas flex items-center gap-1 justify-end ${currentStreak >= 3 ? 'text-orange-400' : currentStreak > 0 ? 'text-yellow-400' : 'text-ink-subtle'}`}>
+                {currentStreak > 0 ? '🔥' : '—'} {currentStreak > 0 ? `${currentStreak}W` : 'NONE'}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] text-ink-subtle uppercase tracking-widest">Total Staked</p>
               <p className="text-xl font-bold font-bebas text-purple-400">
                 {totalStakedSTX.toFixed(2)} STX
               </p>
             </div>
             <button
+              onClick={handleExportCSV}
+              title="Export vow history as CSV"
+              className="px-5 py-3 border border-line text-ink font-bold uppercase rounded-full tracking-widest text-xs hover:border-ink-muted hover:bg-surface-raised transition-all active:scale-95 font-bebas flex items-center gap-2"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+              EXPORT CSV
+            </button>
+            <button
               onClick={() => setIsModalOpen(true)}
-              className="px-8 py-3.5 bg-white text-black font-bold uppercase rounded-full tracking-widest text-sm hover:bg-gray-200 transition-all active:scale-95 shadow-[0_0_30px_rgba(255,255,255,0.2)] font-bebas flex items-center gap-2"
+              className="px-8 py-3.5 bg-ink text-surface font-bold uppercase rounded-full tracking-widest text-sm hover:opacity-85 transition-all active:scale-95 font-bebas flex items-center gap-2"
             >
               CREATE VOW →
             </button>
           </div>
         </div>
 
-        {/* Action Required — expired active vows */}
+        {/* USD value of total staked + Referral card */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="glass-card p-5 flex items-center justify-between">
+            <div>
+              <p className="text-[10px] text-ink-subtle uppercase tracking-widest mb-1">Total Value Staked</p>
+              <p className="text-2xl font-bold font-bebas text-purple-400">{totalStakedSTX.toFixed(2)} STX</p>
+              {formatUSD(totalStakedSTX, stxPrice) && (
+                <p className="text-xs text-ink-muted font-mono mt-0.5">{formatUSD(totalStakedSTX, stxPrice)}</p>
+              )}
+            </div>
+            <div className="text-4xl opacity-20 select-none">💰</div>
+          </div>
+
+          <div className="glass-card p-5">
+            <p className="text-[10px] text-ink-subtle uppercase tracking-widest mb-2">Your Referral Link</p>
+            <p className="text-xs text-ink-muted mb-3 leading-relaxed">
+              Share your personal link. When someone creates their first vow through it, you earn +50 bonus XP (tracked locally).
+            </p>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-mono text-ink-muted bg-surface-raised border border-line px-3 py-1.5 rounded flex-1 truncate">
+                {typeof window !== 'undefined' ? `${window.location.origin}/?ref=${userAddress?.slice(0, 12)}` : '...'}
+              </span>
+              <button
+                onClick={() => {
+                  const link = `${window.location.origin}/?ref=${userAddress}`;
+                  navigator.clipboard.writeText(link).then(() => {
+                    setReferralCopied(true);
+                    toast('Referral link copied!', 'success');
+                    setTimeout(() => setReferralCopied(false), 2500);
+                  });
+                }}
+                className={`flex-shrink-0 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest border rounded transition-all ${
+                  referralCopied
+                    ? 'border-green-500/50 text-green-400 bg-green-500/10'
+                    : 'border-line-strong text-ink hover:border-ink-muted bg-surface-raised hover:bg-surface-hover'
+                }`}
+              >
+                {referralCopied ? 'COPIED ✓' : 'COPY'}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Required */}
         {actionRequired.length > 0 && (
           <div>
             <div className="flex items-center gap-3 mb-4 border-b border-red-500/30 pb-4">
               <div className="w-2 h-2 rounded-full bg-red-400 animate-pulse"></div>
-              <h3 className="text-2xl font-bold text-white uppercase tracking-widest font-bebas">ACTION REQUIRED</h3>
+              <h3 className="text-2xl font-bold text-ink uppercase tracking-widest font-bebas">ACTION REQUIRED</h3>
               <span className="text-xs font-mono text-red-400 border border-red-500/30 px-2 py-0.5 rounded-full">{actionRequired.length}</span>
             </div>
             <div className="space-y-3">
@@ -321,8 +388,8 @@ export default function DashboardPage() {
                       <p className="text-[10px] font-mono text-red-400 mb-1 uppercase tracking-widest">
                         VOW #{vow.id} · DEADLINE PASSED {blocksOver > 0 ? `${blocksOver} blocks ago` : ''}
                       </p>
-                      <h4 className="font-bold text-white">{vow.title}</h4>
-                      <p className="text-xs text-gray-400 mt-0.5">Deadline block #{deadline} · Stake: {Number(vow.stakeAmount ?? vow['stake-amount'] ?? 0) / 1_000_000} STX</p>
+                      <h4 className="font-bold text-ink">{vow.title}</h4>
+                      <p className="text-xs text-ink-muted mt-0.5">Deadline block #{deadline} · Stake: {Number(vow.stakeAmount ?? vow['stake-amount'] ?? 0) / 1_000_000} STX</p>
                     </div>
                     <a
                       href={`/vow/${vow.id}`}
@@ -339,7 +406,7 @@ export default function DashboardPage() {
 
         {/* Your Vows */}
         <div>
-          <h3 className="text-2xl font-bold mb-6 border-b border-white/10 pb-4 text-white uppercase tracking-widest font-bebas">
+          <h3 className="text-2xl font-bold mb-6 border-b border-line pb-4 text-ink uppercase tracking-widest font-bebas">
             YOUR VOWS
             {activeVows.length > 0 && (
               <span className="ml-3 text-sm font-mono text-purple-400 border border-purple-500/30 px-2 py-0.5 rounded-full normal-case tracking-normal">
@@ -348,11 +415,11 @@ export default function DashboardPage() {
             )}
           </h3>
           {myVows.length === 0 ? (
-            <div className="text-center py-12 border border-dashed border-white/20 rounded-xl bg-white/5 flex flex-col items-center">
-              <p className="text-gray-400 mb-4 tracking-wider">You don&apos;t have any vows yet.</p>
+            <div className="text-center py-12 border border-dashed border-line-strong rounded-xl bg-surface-raised flex flex-col items-center">
+              <p className="text-ink-muted mb-4 tracking-wider">You don&apos;t have any vows yet.</p>
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="text-sm font-bold text-white hover:text-purple-400 uppercase tracking-widest border border-white/20 px-6 py-2 rounded-full transition-colors"
+                className="text-sm font-bold text-ink hover:text-purple-400 uppercase tracking-widest border border-line-strong px-6 py-2 rounded-full transition-colors"
               >
                 Create your first vow
               </button>
@@ -370,21 +437,21 @@ export default function DashboardPage() {
 
         {/* Spectator Bets */}
         <div>
-          <h3 className="text-2xl font-bold mb-6 border-b border-white/10 pb-4 text-white uppercase tracking-widest font-bebas">
+          <h3 className="text-2xl font-bold mb-6 border-b border-line pb-4 text-ink uppercase tracking-widest font-bebas">
             YOUR SPECTATOR BETS
           </h3>
 
           {betsLoading ? (
-            <div className="flex items-center gap-3 text-gray-500 text-xs font-mono py-6">
+            <div className="flex items-center gap-3 text-ink-muted text-xs font-mono py-6">
               <div className="w-4 h-4 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
               Scanning recent vows for your bets...
             </div>
           ) : spectatorBets.length === 0 ? (
-            <div className="text-center py-12 border border-dashed border-white/20 rounded-xl bg-white/5 flex flex-col items-center">
-              <p className="text-gray-400 mb-4 tracking-wider">No spectator bets found in recent vows.</p>
+            <div className="text-center py-12 border border-dashed border-line-strong rounded-xl bg-surface-raised flex flex-col items-center">
+              <p className="text-ink-muted mb-4 tracking-wider">No spectator bets found in recent vows.</p>
               <button
                 onClick={() => router.push('/feed')}
-                className="text-sm font-bold text-white hover:text-purple-400 uppercase tracking-widest border border-white/20 px-6 py-2 rounded-full transition-colors"
+                className="text-sm font-bold text-ink hover:text-purple-400 uppercase tracking-widest border border-line-strong px-6 py-2 rounded-full transition-colors"
               >
                 Browse Active Vows
               </button>
@@ -393,7 +460,7 @@ export default function DashboardPage() {
             <div className="glass-card p-6 overflow-x-auto">
               <table className="w-full text-left border-collapse min-w-[500px]">
                 <thead>
-                  <tr className="border-b border-white/10 text-xs text-gray-500 uppercase tracking-widest">
+                  <tr className="border-b border-line text-xs text-ink-muted uppercase tracking-widest">
                     <th className="pb-4 font-normal">Vow</th>
                     <th className="pb-4 font-normal">My Bet</th>
                     <th className="pb-4 font-normal">Prediction</th>
@@ -415,12 +482,12 @@ export default function DashboardPage() {
                       (bet.vowStatus === VOW_STATUS.COMPLETED && bet.prediction) ||
                       (bet.vowStatus === VOW_STATUS.FAILED && !bet.prediction);
                     return (
-                      <tr key={bet.vowId} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                      <tr key={bet.vowId} className="border-b border-line hover:bg-surface-raised transition-colors">
                         <td className="py-4">
                           <a href={`/vow/${bet.vowId}`} className="font-bold text-sm hover:text-purple-400 transition-colors">
                             {bet.title}
                           </a>
-                          <p className="text-[10px] text-gray-600 font-mono">#{bet.vowId}</p>
+                          <p className="text-[10px] text-ink-subtle font-mono">#{bet.vowId}</p>
                         </td>
                         <td className="py-4 text-purple-400 font-bold font-bebas text-lg">
                           {(bet.amount / 1_000_000).toFixed(4)} STX
@@ -438,7 +505,7 @@ export default function DashboardPage() {
                         </td>
                         <td className="py-4 text-right">
                           {bet.claimed ? (
-                            <span className="text-[10px] text-gray-500 font-mono">CLAIMED</span>
+                            <span className="text-[10px] text-ink-subtle font-mono">CLAIMED</span>
                           ) : won ? (
                             <button
                               onClick={() => handleClaim(bet.vowId)}
@@ -447,7 +514,7 @@ export default function DashboardPage() {
                               CLAIM
                             </button>
                           ) : (
-                            <span className="text-[10px] text-gray-600 font-mono">—</span>
+                            <span className="text-[10px] text-ink-subtle font-mono">—</span>
                           )}
                         </td>
                       </tr>

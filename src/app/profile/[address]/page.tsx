@@ -5,19 +5,27 @@ import { useParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SidebarLayout } from '@/components/SidebarLayout';
 import { VowCard } from '@/components/VowCard';
-import { getVowCount, getVow } from '@/lib/contract';
+import { getVowCount, getVow, getCurrentBlockHeight } from '@/lib/contract';
 import { VOW_TYPES, VOW_STATUS } from '@/lib/types';
+import { getWalletFirstBlock, walletAgeLabel } from '@/lib/walletAge';
+import { useToast } from '@/components/Toast';
 
 export default function ProfilePage() {
   const { address } = useParams();
   const router = useRouter();
+  const { toast } = useToast();
   const [vows, setVows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncProgress, setSyncProgress] = useState({ current: 0, total: 0 });
+  const [walletFirstBlock, setWalletFirstBlock] = useState<number | null>(null);
+  const [currentBlock, setCurrentBlock] = useState(0);
 
   useEffect(() => {
     if (address) {
       syncAndFilterVows();
+      const addr = typeof address === 'string' ? address : '';
+      getCurrentBlockHeight().then(b => setCurrentBlock(b));
+      getWalletFirstBlock(addr).then(b => setWalletFirstBlock(b));
     }
   }, [address]);
 
@@ -152,9 +160,10 @@ export default function ProfilePage() {
   const formatShortAddress = (addr: string) => `${addr.slice(0, 6)}...${addr.slice(-6)}`;
 
   const handleCopyAddress = () => {
-    navigator.clipboard.writeText(userAddress);
-    alert('Wallet address copied to clipboard!');
+    navigator.clipboard.writeText(userAddress).then(() => toast('Address copied.', 'success'));
   };
+
+  const ageBadge = walletAgeLabel(walletFirstBlock, currentBlock);
 
   return (
     <SidebarLayout activePage="profile">
@@ -168,6 +177,11 @@ export default function ProfilePage() {
                 <span>{badgeIcon}</span>
                 <span>{badgeTitle}</span>
               </span>
+              {ageBadge && (
+                <span title={ageBadge.title} className={`px-3 py-1 text-[10px] font-bold tracking-widest uppercase border rounded-full ${ageBadge.color}`}>
+                  {ageBadge.label} WALLET
+                </span>
+              )}
               <span className="text-[10px] text-gray-500 font-mono tracking-widest">USER ACCOUNT</span>
             </div>
             
@@ -176,7 +190,7 @@ export default function ProfilePage() {
               <button 
                 onClick={handleCopyAddress}
                 title="Copy Address"
-                className="text-gray-500 hover:text-white transition-colors flex-shrink-0"
+                className="text-ink-subtle hover:text-ink transition-colors flex-shrink-0"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
               </button>
@@ -187,7 +201,7 @@ export default function ProfilePage() {
           <div className="flex gap-4 items-center">
             <button 
               onClick={() => router.push('/feed')}
-              className="px-6 py-2.5 border border-white/10 hover:border-white/30 text-xs font-bold tracking-widest uppercase rounded-full bg-white/5 hover:bg-white/10 transition-all font-bebas"
+              className="px-6 py-2.5 border border-line hover:border-ink-muted text-xs font-bold tracking-widest uppercase rounded-full bg-surface-raised hover:bg-surface-hover transition-all font-bebas"
             >
               Browse Feed
             </button>
@@ -201,7 +215,7 @@ export default function ProfilePage() {
               <span className="text-purple-400 uppercase">Synchronizing profile with mainnet...</span>
               <span>{syncProgress.current} / {syncProgress.total} vows</span>
             </div>
-            <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+            <div className="w-full h-1.5 bg-surface-raised rounded-full overflow-hidden">
               <div 
                 className="h-full bg-gradient-to-r from-purple-500 to-blue-500 transition-all duration-300"
                 style={{ width: `${(syncProgress.current / syncProgress.total) * 100}%` }}
@@ -212,21 +226,21 @@ export default function ProfilePage() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="glass-card p-5 border-white/10 bg-white/5">
+          <div className="glass-card p-5 border-line bg-surface-raised">
             <div className="text-[10px] text-gray-500 tracking-widest font-bold uppercase mb-2">REPUTATION</div>
             <div className="text-3xl font-bold font-bebas tracking-wider text-purple-400">{reputation} XP</div>
           </div>
-          <div className="glass-card p-5 border-white/10 bg-white/5">
+          <div className="glass-card p-5 border-line bg-surface-raised">
             <div className="text-[10px] text-gray-500 tracking-widest font-bold uppercase mb-2">SUCCESS RATE</div>
             <div className={`text-3xl font-bold font-bebas tracking-wider ${
               winRate >= 75 ? 'text-green-400' : winRate >= 50 ? 'text-yellow-400' : winRate > 0 ? 'text-red-400' : 'text-gray-400'
             }`}>{winRate}%</div>
           </div>
-          <div className="glass-card p-5 border-white/10 bg-white/5">
+          <div className="glass-card p-5 border-line bg-surface-raised">
             <div className="text-[10px] text-gray-500 tracking-widest font-bold uppercase mb-2">VOLUME STAKED</div>
             <div className="text-3xl font-bold font-bebas tracking-wider text-white">{totalStakedVolume.toFixed(2)} STX</div>
           </div>
-          <div className="glass-card p-5 border-white/10 bg-white/5">
+          <div className="glass-card p-5 border-line bg-surface-raised">
             <div className="text-[10px] text-gray-500 tracking-widest font-bold uppercase mb-2">VOW RECORD</div>
             <div className="text-xl font-bold font-bebas tracking-wide text-white">
               <span className="text-green-400">{completedCount} Kept</span>
@@ -244,7 +258,7 @@ export default function ProfilePage() {
 
         {/* Vows Created list */}
         <div>
-          <h3 className="text-2xl font-bold mb-6 border-b border-white/10 pb-4 text-white uppercase tracking-widest font-bebas">CREATOR VOWS ({myCreatedVows.length})</h3>
+          <h3 className="text-2xl font-bold mb-6 border-b border-line pb-4 text-white uppercase tracking-widest font-bebas">CREATOR VOWS ({myCreatedVows.length})</h3>
           
           {loading && myCreatedVows.length === 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -253,7 +267,7 @@ export default function ProfilePage() {
               ))}
             </div>
           ) : myCreatedVows.length === 0 ? (
-            <div className="text-center py-12 border border-dashed border-white/20 rounded-xl bg-white/5 flex flex-col items-center">
+            <div className="text-center py-12 border border-dashed border-line-strong rounded-xl bg-surface-raised flex flex-col items-center">
               <p className="text-gray-400 tracking-wider">This wallet has not created any accountability vows yet.</p>
             </div>
           ) : (
@@ -270,7 +284,7 @@ export default function ProfilePage() {
         {/* Rival Vows list */}
         {myRivalVows.length > 0 && (
           <div>
-            <h3 className="text-2xl font-bold mb-6 border-b border-white/10 pb-4 text-white uppercase tracking-widest font-bebas">RIVAL VOWS ({myRivalVows.length})</h3>
+            <h3 className="text-2xl font-bold mb-6 border-b border-line pb-4 text-white uppercase tracking-widest font-bebas">RIVAL VOWS ({myRivalVows.length})</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <AnimatePresence>
                 {myRivalVows.map((vow, idx) => (

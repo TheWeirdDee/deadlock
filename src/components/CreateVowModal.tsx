@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useRef } from 'react';
 import { useConnect } from '@stacks/connect-react';
@@ -14,12 +14,10 @@ import {
 } from '@stacks/transactions';
 import { motion } from 'framer-motion';
 import { VOW_TYPES } from '@/lib/types';
-import { contractDetails, getNetwork, getCurrentBlockHeight } from '@/lib/contract';
-import { useToast } from '@/components/Toast';
+import { contractDetails, getNetwork } from '@/lib/contract';
 
 export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
   const { doContractCall, doOpenAuth } = useConnect();
-  const { toast } = useToast();
   
   const userSessionRef = useRef<UserSession | null>(null);
   if (!userSessionRef.current && typeof window !== 'undefined') {
@@ -33,6 +31,16 @@ export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
   const [type, setType] = useState(VOW_TYPES.BURN);
   const [amount, setAmount] = useState('');
   const [target, setTarget] = useState('');
+  const [showTemplates, setShowTemplates] = useState(false);
+
+  const VOW_TEMPLATES = [
+    { emoji: '🚀', label: 'SHIP A PROJECT', title: 'SHIP MY SIDE PROJECT', description: 'I will have a live, deployed version of my project with at least one real user by the deadline. Proof: public URL + screenshot.', days: '30', amount: '50' },
+    { emoji: '💪', label: 'FITNESS GOAL', title: 'COMPLETE 30-DAY FITNESS CHALLENGE', description: 'I will work out every day for 30 days. Proof: daily log thread on Twitter/X showing progress photos and workout summaries.', days: '30', amount: '25' },
+    { emoji: '📚', label: 'LEARN A SKILL', title: 'COMPLETE AN ONLINE COURSE', description: 'I will finish and receive a certificate for an online course. Proof: completion certificate screenshot.', days: '14', amount: '20' },
+    { emoji: '✍️', label: 'WRITING GOAL', title: 'PUBLISH 5 ARTICLES', description: 'I will publish 5 original articles or essays publicly. Proof: links to all five published posts.', days: '30', amount: '30' },
+    { emoji: '💰', label: 'SAVINGS GOAL', title: 'SAVE $X THIS MONTH', description: 'I will increase my savings account balance by the target amount this month. Proof: redacted bank screenshot showing before/after balances.', days: '30', amount: '100' },
+    { emoji: '🏗️', label: 'BUILD IN PUBLIC', title: 'WEEKLY BUILD-IN-PUBLIC UPDATES', description: 'I will post a build-in-public update every week without missing a week. Proof: Twitter/X thread with all updates linked.', days: '7', amount: '10' },
+  ];
 
   const [currentBlock, setCurrentBlock] = useState<number | null>(null);
   const [deadlineMode, setDeadlineMode] = useState<'duration' | 'custom'>('duration');
@@ -42,10 +50,25 @@ export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
   useEffect(() => {
     if (!isOpen) return;
     let active = true;
-    getCurrentBlockHeight()
-      .then(height => { if (active) setCurrentBlock(height); })
-      .catch(e => console.error('Failed to fetch block height:', e));
-    return () => { active = false; };
+    async function fetchBlockHeight() {
+      try {
+        const network = getNetwork();
+        const apiBase = network.coreApiUrl || (process.env.NEXT_PUBLIC_NETWORK === 'mainnet' ? 'https://api.mainnet.hiro.so' : 'https://api.testnet.hiro.so');
+        const res = await fetch(`${apiBase}/v2/info`);
+        if (res.ok) {
+          const info = await res.json();
+          if (info && info.stacks_tip_height && active) {
+            setCurrentBlock(info.stacks_tip_height);
+          }
+        }
+      } catch (e) {
+        console.error('Failed to fetch block height:', e);
+      }
+    }
+    fetchBlockHeight();
+    return () => {
+      active = false;
+    };
   }, [isOpen]);
 
   if (!isOpen) return null;
@@ -59,7 +82,6 @@ export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
       return;
     }
     
-    // Convert STX input to microSTX (1 STX = 1,000,000 microSTX) and validate
     const parsedAmount = parseFloat(amount);
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
       alert('Please enter a valid stake amount');
@@ -117,7 +139,7 @@ export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
       anchorMode: AnchorMode.Any,
       postConditionMode: PostConditionMode.Allow,
       onFinish: (data) => {
-        toast('Vow submitted — it will appear once confirmed on-chain.', 'success');
+        console.log('Transaction sent:', data);
         try {
           const pendingVow = {
             id: `pending-${data.txId}`,
@@ -138,9 +160,13 @@ export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
         }
         onClose();
       },
-      onCancel: () => toast('Transaction cancelled.', 'info'),
+      onCancel: () => {
+        console.log('Transaction cancelled');
+      },
     });
   };
+
+  const inputClass = "w-full bg-surface-raised border border-line p-3 outline-none focus:border-ink-muted transition-colors text-ink placeholder-ink-subtle";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -149,15 +175,52 @@ export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
-        className="absolute inset-0 bg-black/80 backdrop-blur-md"
+        className="absolute inset-0 bg-surface/80 backdrop-blur-md"
       />
       <motion.div 
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="relative w-full max-w-2xl glass-card p-6 md:p-8 bg-[#111] border-white/10 max-h-[90vh] overflow-y-auto"
+        className="relative w-full max-w-2xl glass-card p-6 md:p-8 max-h-[90vh] overflow-y-auto"
       >
-        <h3 className="text-3xl md:text-4xl font-bold mb-8 uppercase">INITIATE VOW</h3>
-        
+        <div className="flex justify-between items-start mb-8">
+          <h3 className="text-3xl md:text-4xl font-bold uppercase">INITIATE VOW</h3>
+          <button
+            type="button"
+            onClick={() => setShowTemplates(!showTemplates)}
+            className="text-[10px] font-bold tracking-widest uppercase border border-line-strong px-3 py-1.5 rounded-full hover:border-ink-muted hover:bg-surface-raised transition-all text-ink-muted hover:text-ink flex items-center gap-1.5 flex-shrink-0"
+          >
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+            {showTemplates ? 'HIDE' : 'TEMPLATES'}
+          </button>
+        </div>
+
+        {showTemplates && (
+          <div className="mb-6 space-y-2">
+            <p className="text-[10px] text-ink-subtle uppercase tracking-widest mb-3">Quick-fill a common goal</p>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              {VOW_TEMPLATES.map((t, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => {
+                    setTitle(t.title);
+                    setDescription(t.description);
+                    setAmount(t.amount);
+                    setDurationDays(t.days);
+                    setDeadlineMode('duration');
+                    setType(VOW_TYPES.BURN);
+                    setShowTemplates(false);
+                  }}
+                  className="p-3 bg-surface-raised border border-line hover:border-ink-muted hover:bg-surface-hover rounded-lg text-left transition-all group"
+                >
+                  <div className="text-lg mb-1">{t.emoji}</div>
+                  <div className="text-[9px] font-bold tracking-widest uppercase text-ink-muted group-hover:text-ink transition-colors">{t.label}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
             <label className="text-[10px] uppercase opacity-40">Vow Type</label>
@@ -172,7 +235,7 @@ export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
                   type="button"
                   onClick={() => setType(t.id)}
                   className={`flex-1 min-w-[80px] py-3 text-sm font-bold border transition-all ${
-                    type === t.id ? t.color + ' bg-white/5' : 'border-white/10 opacity-40 hover:opacity-100'
+                    type === t.id ? t.color + ' bg-surface-raised' : 'border-line opacity-40 hover:opacity-100'
                   }`}
                 >
                   {t.label}
@@ -187,7 +250,7 @@ export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
               required
               value={title}
               onChange={e => setTitle(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 p-3 outline-none focus:border-white transition-colors"
+              className={inputClass}
               placeholder="e.g. SHIP DEADLOCK FRONTEND"
             />
           </div>
@@ -201,13 +264,12 @@ export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
               min="0.002"
               value={amount}
               onChange={e => setAmount(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 p-3 outline-none focus:border-white transition-colors"
+              className={inputClass}
               placeholder="100"
             />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Deadline Selection */}
             <div className="space-y-4">
               <div className="space-y-2">
                 <label className="text-[10px] uppercase opacity-40 block">Deadline Mode</label>
@@ -216,7 +278,7 @@ export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
                     type="button"
                     onClick={() => setDeadlineMode('duration')}
                     className={`flex-1 py-2.5 text-xs font-bold border transition-all ${
-                      deadlineMode === 'duration' ? 'border-purple-500 bg-purple-500/10' : 'border-white/10 opacity-50 hover:opacity-100'
+                      deadlineMode === 'duration' ? 'border-purple-500 bg-purple-500/10' : 'border-line opacity-50 hover:opacity-100'
                     }`}
                   >
                     DURATION (DAYS)
@@ -225,7 +287,7 @@ export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
                     type="button"
                     onClick={() => setDeadlineMode('custom')}
                     className={`flex-1 py-2.5 text-xs font-bold border transition-all ${
-                      deadlineMode === 'custom' ? 'border-purple-500 bg-purple-500/10' : 'border-white/10 opacity-50 hover:opacity-100'
+                      deadlineMode === 'custom' ? 'border-purple-500 bg-purple-500/10' : 'border-line opacity-50 hover:opacity-100'
                     }`}
                   >
                     SPECIFIC BLOCK
@@ -250,7 +312,7 @@ export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
                         type="button"
                         onClick={() => setDurationDays(opt.days)}
                         className={`py-2.5 text-xs font-mono font-bold border transition-all ${
-                          durationDays === opt.days ? 'border-white bg-white/10' : 'border-white/5 opacity-55 hover:opacity-100'
+                          durationDays === opt.days ? 'border-ink bg-surface-hover' : 'border-line opacity-55 hover:opacity-100'
                         }`}
                       >
                         {opt.label}
@@ -266,14 +328,13 @@ export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
                     type="number"
                     value={customDeadline}
                     onChange={e => setCustomDeadline(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 p-3.5 outline-none focus:border-white transition-colors"
+                    className={inputClass + ' p-3.5'}
                     placeholder="e.g. 165000"
                   />
                 </div>
               )}
             </div>
 
-            {/* Target Address & Calculation info */}
             <div className="space-y-4">
               {type !== VOW_TYPES.BURN ? (
                 <div className="space-y-2">
@@ -284,14 +345,14 @@ export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
                     required
                     value={target}
                     onChange={e => setTarget(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 p-3 outline-none focus:border-white transition-colors text-sm font-mono"
+                    className={inputClass + ' text-sm font-mono'}
                     placeholder="SP..."
                   />
                 </div>
               ) : (
                 <div className="space-y-2">
                   <label className="text-[10px] uppercase opacity-40 block">Forfeit Destination</label>
-                  <div className="w-full bg-white/5 border border-dashed border-red-500/20 text-red-400 p-3 text-xs font-mono select-none">
+                  <div className="w-full bg-surface-raised border border-dashed border-red-500/20 text-red-400 p-3 text-xs font-mono select-none">
                     BURN ADDRESS: SP0000...2Q6VF78
                   </div>
                 </div>
@@ -300,10 +361,10 @@ export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
               <div className="space-y-2">
                 <label className="text-[10px] uppercase opacity-40 block">Live Calculation</label>
                 {currentBlock !== null ? (
-                  <div className="p-3 bg-white/5 border border-white/10 rounded font-mono text-xs space-y-1">
+                  <div className="p-3 bg-surface-raised border border-line rounded font-mono text-xs space-y-1">
                     <div className="flex justify-between">
                       <span className="opacity-50">Current Block:</span>
-                      <span className="font-bold text-gray-300">#{currentBlock}</span>
+                      <span className="font-bold text-ink-muted">#{currentBlock}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="opacity-50">Deadline Block:</span>
@@ -330,7 +391,7 @@ export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
                     </div>
                   </div>
                 ) : (
-                  <div className="p-3 bg-white/5 border border-white/10 rounded font-mono text-xs text-center text-gray-500 animate-pulse">
+                  <div className="p-3 bg-surface-raised border border-line rounded font-mono text-xs text-center text-ink-subtle animate-pulse">
                     Fetching current Stacks block height...
                   </div>
                 )}
@@ -344,7 +405,7 @@ export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
               required
               value={description}
               onChange={e => setDescription(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 p-3 outline-none focus:border-white transition-colors h-24 resize-none"
+              className={inputClass + ' h-24 resize-none'}
               placeholder="If I don't deploy this by block X, my stake is forfeit."
             />
           </div>

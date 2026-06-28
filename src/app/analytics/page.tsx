@@ -16,15 +16,15 @@ function fmtAddr(addr: string): string {
 }
 
 function vowAction(status: number): string {
-  if (status === VOW_STATUS.COMPLETED) return 'CHALLENGE MET';
-  if (status === VOW_STATUS.FAILED) return 'VOW FAILED';
+  if (status === VOW_STATUS.COMPLETED) return 'PROOF ACCEPTED';
+  if (status === VOW_STATUS.FAILED) return 'EXPIRED (NO PROOF)';
   if (status === VOW_STATUS.CHALLENGED) return 'UNDER CHALLENGE';
   return 'VOW ACTIVE';
 }
 
 function vowStatusLabel(status: number): string {
   if (status === VOW_STATUS.COMPLETED) return 'Completed';
-  if (status === VOW_STATUS.FAILED) return 'Failed';
+  if (status === VOW_STATUS.FAILED) return 'Expired';
   if (status === VOW_STATUS.CHALLENGED) return 'Challenged';
   return 'Active';
 }
@@ -93,6 +93,8 @@ export default function AnalyticsPage() {
     let totalSTX = 0;
     let completed = 0;
     let failed = 0;
+    let active = 0;
+    let challenged = 0;
     let totalVotes = 0;
 
     for (const v of vows) {
@@ -100,7 +102,9 @@ export default function AnalyticsPage() {
       totalSTX += Number(v.rivalStake ?? v['rival-stake'] ?? 0) / 1_000_000;
       const s = Number(v.status);
       if (s === VOW_STATUS.COMPLETED) completed++;
-      if (s === VOW_STATUS.FAILED) failed++;
+      else if (s === VOW_STATUS.FAILED) failed++;
+      else if (s === VOW_STATUS.CHALLENGED) challenged++;
+      else active++;
       totalVotes += Number(v.yesVotes ?? v['yes-votes'] ?? 0) + Number(v.noVotes ?? v['no-votes'] ?? 0);
     }
 
@@ -109,12 +113,15 @@ export default function AnalyticsPage() {
     const stxLabel = totalSTX >= 1000 ? `${(totalSTX / 1000).toFixed(1)}K` : totalSTX.toFixed(1);
     const votesLabel = totalVotes >= 1000 ? `${(totalVotes / 1000).toFixed(1)}K` : String(totalVotes);
 
-    return [
-      { label: 'Total STX Staked', value: `${stxLabel} STX`, sub: `across ${vows.length} vows`, color: 'text-purple-400' },
-      { label: 'Total Vows', value: vows.length.toLocaleString(), sub: `${completed} completed, ${failed} failed`, color: 'text-blue-400' },
-      { label: 'Global Success Rate', value: `${successRate}%`, sub: `${settled} settled vows`, color: 'text-green-400' },
-      { label: 'Total Votes Cast', value: votesLabel, sub: 'community governance', color: 'text-pink-400' },
-    ];
+    return {
+      cards: [
+        { label: 'Total STX Staked', value: `${stxLabel} STX`, sub: `across ${vows.length} vows`, color: 'text-purple-400' },
+        { label: 'Total Vows', value: vows.length.toLocaleString(), sub: `${active} active · ${challenged} in review · ${completed} completed · ${failed} expired`, color: 'text-blue-400' },
+        { label: 'Proof Success Rate', value: `${successRate}%`, sub: `${settled} with on-chain proof submitted`, color: 'text-green-400' },
+        { label: 'Total Votes Cast', value: votesLabel, sub: 'community challenge votes', color: 'text-pink-400' },
+      ],
+      completed, failed, active, challenged,
+    };
   }, [vows]);
 
   // Group vows into up to 10 buckets by ID for bar chart
@@ -220,6 +227,11 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
+      <div className="mb-6 p-4 rounded-xl border border-amber-500/20 bg-amber-500/5 text-xs text-amber-300/80 leading-relaxed font-space">
+        <span className="font-bold text-amber-400 tracking-widest uppercase mr-2">How "Expired" works:</span>
+        Vows are marked as <span className="font-bold">Expired</span> when their deadline passes without an on-chain proof submission. Anyone can trigger this via the public <code className="bg-black/30 px-1 rounded">claim-failure</code> function — it does not mean the creator broke their commitment in real life, only that proof was not recorded on-chain before the deadline. Completed vows require the creator to submit proof and survive a community challenge window.
+      </div>
+
       {loading && vows.length === 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {[1, 2, 3, 4].map(i => (
@@ -228,7 +240,7 @@ export default function AnalyticsPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {(computedStats ?? []).map((stat, idx) => (
+          {(computedStats?.cards ?? []).map((stat, idx) => (
             <div key={idx} className="glass-card p-6 flex flex-col justify-between">
               <div className="flex justify-between items-start mb-4">
                 <h3 className="text-xs text-gray-400 uppercase tracking-widest">{stat.label}</h3>
@@ -316,7 +328,7 @@ export default function AnalyticsPage() {
         </div>
 
         <div className="flex gap-6 border-b border-white/10 mb-6 overflow-x-auto pb-2">
-          {['All', 'Active', 'Completed', 'Failed', 'Challenged'].map(tab => (
+          {['All', 'Active', 'Completed', 'Expired', 'Challenged'].map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}

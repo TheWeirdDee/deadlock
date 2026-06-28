@@ -113,11 +113,16 @@ export default function AnalyticsPage() {
     const stxLabel = totalSTX >= 1000 ? `${(totalSTX / 1000).toFixed(1)}K` : totalSTX.toFixed(1);
     const votesLabel = totalVotes >= 1000 ? `${(totalVotes / 1000).toFixed(1)}K` : String(totalVotes);
 
+    // CHALLENGED (status=4) = proof submitted on-chain, awaiting community finalization
+    // These are genuine completion attempts — count them with completed for the headline rate
+    const proofSubmitted = completed + challenged;
+    const proofRate = vows.length === 0 ? 0 : Math.round((proofSubmitted / vows.length) * 100);
+
     return {
       cards: [
         { label: 'Total STX Staked', value: `${stxLabel} STX`, sub: `across ${vows.length} vows`, color: 'text-purple-400' },
-        { label: 'Total Vows', value: vows.length.toLocaleString(), sub: `${active} active · ${challenged} in review · ${completed} completed · ${failed} expired`, color: 'text-blue-400' },
-        { label: 'Proof Success Rate', value: `${successRate}%`, sub: `${settled} with on-chain proof submitted`, color: 'text-green-400' },
+        { label: 'Proof Submitted', value: proofSubmitted.toLocaleString(), sub: `${completed} finalized · ${challenged} awaiting community vote`, color: 'text-green-400' },
+        { label: 'Expired Without Proof', value: failed.toLocaleString(), sub: `${active} still active · deadline passed, no proof`, color: 'text-red-400' },
         { label: 'Total Votes Cast', value: votesLabel, sub: 'community challenge votes', color: 'text-pink-400' },
       ],
       completed, failed, active, challenged,
@@ -227,9 +232,9 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      <div className="mb-6 p-4 rounded-xl border border-amber-500/20 bg-amber-500/5 text-xs text-amber-300/80 leading-relaxed font-space">
-        <span className="font-bold text-amber-400 tracking-widest uppercase mr-2">How "Expired" works:</span>
-        Vows are marked as <span className="font-bold">Expired</span> when their deadline passes without an on-chain proof submission. Anyone can trigger this via the public <code className="bg-black/30 px-1 rounded">claim-failure</code> function — it does not mean the creator broke their commitment in real life, only that proof was not recorded on-chain before the deadline. Completed vows require the creator to submit proof and survive a community challenge window.
+      <div className="mb-6 p-4 rounded-xl border border-blue-500/20 bg-blue-500/5 text-xs text-blue-300/80 leading-relaxed font-space">
+        <span className="font-bold text-blue-400 tracking-widest uppercase mr-2">How completion works:</span>
+        Submitting proof sets a vow to <span className="font-bold">Under Challenge</span> (status 4) — the community votes, then anyone can call <code className="bg-black/30 px-1 rounded">finalize-challenged-vow</code> to officially mark it Completed. Vows that expire without proof submitted can be swept to Expired by anyone via <code className="bg-black/30 px-1 rounded">claim-failure</code>.
       </div>
 
       {loading && vows.length === 0 ? (

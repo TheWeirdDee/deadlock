@@ -289,19 +289,8 @@ export default function Home() {
 
         <div className="bg-[#050505] border-y border-white/5 py-12 px-6 sm:px-12 md:px-24">
           <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            <div id="analytics" className="lg:col-span-7 grid grid-cols-3 gap-6 text-left">
+            <div id="analytics" className="lg:col-span-7 grid grid-cols-2 gap-6 text-left">
               <div>
-                <h4 className="text-3xl sm:text-5xl font-bold font-bebas text-white tracking-wider mb-1">
-                  {stats === null ? (
-                    <span className="text-ink-subtle animate-pulse">---</span>
-                  ) : (
-                    <>{stats.lockedSTX.toFixed(1)}<span className="text-purple-500"> STX</span></>
-                  )}
-                </h4>
-                <p className="text-[10px] tracking-widest text-ink-subtle uppercase font-bold">STX ESCROWED</p>
-              </div>
-
-              <div className="border-l border-white/10 pl-6">
                 <h4 className="text-3xl sm:text-5xl font-bold font-bebas text-white tracking-wider mb-1">
                   {stats === null ? (
                     <span className="text-ink-subtle animate-pulse">---</span>

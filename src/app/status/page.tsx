@@ -18,8 +18,6 @@ const HIRO_API =
     ? 'https://api.mainnet.hiro.so'
     : 'https://api.testnet.hiro.so';
 
-const HIRO_API_KEY = process.env.NEXT_PUBLIC_HIRO_API_KEY;
-
 async function timed<T>(fn: () => Promise<T>): Promise<{ result: T; ms: number }> {
   const t0 = performance.now();
   const result = await fn();
@@ -38,18 +36,11 @@ export default function StatusPage() {
     setContractCheck({ state: 'loading' });
     setBlockCheck({ state: 'loading' });
 
-    // Hiro API ping + block height
+    // Use getCurrentBlockHeight() — it injects the API key via contract.ts fetchFn
+    // Avoids raw unauthenticated fetch that Hiro rate-limits without an API key
     try {
-      const { result, ms } = await timed(() =>
-        fetch(`${HIRO_API}/v2/info`, {
-          headers: HIRO_API_KEY ? { 'x-api-key': HIRO_API_KEY } : {},
-        }).then(r => {
-          if (!r.ok) throw new Error(`HTTP ${r.status}`);
-          return r.json();
-        })
-      );
-      const height = result.stacks_tip_height ?? result.burn_block_height ?? '—';
-      setApiCheck({ state: 'ok', value: `${HIRO_API}`, latencyMs: ms });
+      const { result: height, ms } = await timed(() => getCurrentBlockHeight());
+      setApiCheck({ state: 'ok', value: HIRO_API, latencyMs: ms });
       setBlockCheck({ state: 'ok', value: String(height), latencyMs: ms });
     } catch (e: any) {
       const msg = e?.message ?? String(e);
@@ -92,6 +83,7 @@ export default function StatusPage() {
     { key: 'NEXT_PUBLIC_CONTRACT_ADDRESS', value: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS },
     { key: 'NEXT_PUBLIC_CONTRACT_NAME', value: process.env.NEXT_PUBLIC_CONTRACT_NAME },
     { key: 'NEXT_PUBLIC_NETWORK', value: process.env.NEXT_PUBLIC_NETWORK },
+    { key: 'NEXT_PUBLIC_HIRO_API_KEY', value: process.env.NEXT_PUBLIC_HIRO_API_KEY ? '••••••••' : undefined },
   ];
 
   const allOk =
@@ -113,18 +105,12 @@ export default function StatusPage() {
     {
       label: 'BLOCK HEIGHT',
       result: blockCheck,
-      detail:
-        blockCheck.state === 'ok'
-          ? `#${blockCheck.value}`
-          : blockCheck.error,
+      detail: blockCheck.state === 'ok' ? `#${blockCheck.value}` : blockCheck.error,
     },
     {
       label: 'CONTRACT READ',
       result: contractCheck,
-      detail:
-        contractCheck.state === 'ok'
-          ? contractCheck.value
-          : contractCheck.error,
+      detail: contractCheck.state === 'ok' ? contractCheck.value : contractCheck.error,
     },
   ];
 
@@ -135,22 +121,22 @@ export default function StatusPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-4xl font-bold font-bebas tracking-widest text-white uppercase">
+            <h1 className="text-4xl font-bold font-bebas tracking-widest text-ink uppercase">
               System Status
             </h1>
-            <p className="text-xs text-gray-500 mt-1 font-mono">
+            <p className="text-sm text-ink-muted mt-1 font-mono">
               Live diagnostics for the DEADLOCK on-chain platform
             </p>
           </div>
           <div className="flex items-center gap-4">
             {lastRun && (
-              <span className="text-[10px] text-gray-500 font-mono">
+              <span className="text-xs text-ink-subtle font-mono">
                 Last run: {lastRun.toLocaleTimeString()}
               </span>
             )}
             <button
               onClick={runDiagnostics}
-              className="px-5 py-2 border border-white/10 hover:border-white/30 text-xs font-bold tracking-widest uppercase rounded-full bg-white/5 hover:bg-white/10 transition-all font-bebas"
+              className="px-5 py-2 border border-line hover:border-white/30 text-xs font-bold tracking-widest uppercase rounded-full bg-surface-raised hover:bg-surface-hover transition-all font-bebas text-ink"
             >
               Run Again
             </button>
@@ -169,20 +155,15 @@ export default function StatusPage() {
         >
           <div
             className={`w-3 h-3 rounded-full flex-shrink-0 ${
-              anyError
-                ? 'bg-red-500 animate-pulse'
-                : allOk
-                ? 'bg-green-500'
-                : 'bg-yellow-500 animate-pulse'
+              anyError ? 'bg-red-500 animate-pulse' : allOk ? 'bg-green-500' : 'bg-yellow-500 animate-pulse'
             }`}
           />
           <div>
-            <p className="text-sm font-bold uppercase tracking-widest font-bebas">
+            <p className="text-sm font-bold uppercase tracking-widest font-bebas text-ink">
               {anyError ? 'DEGRADED' : allOk ? 'ALL SYSTEMS OPERATIONAL' : 'CHECKING...'}
             </p>
-            <p className="text-[10px] text-gray-500 font-mono mt-0.5">
-              {contractDetails.address}.{contractDetails.name} ·{' '}
-              {process.env.NEXT_PUBLIC_NETWORK ?? 'mainnet'}
+            <p className="text-xs text-ink-subtle font-mono mt-0.5">
+              {contractDetails.address}.{contractDetails.name} · {process.env.NEXT_PUBLIC_NETWORK ?? 'mainnet'}
             </p>
           </div>
         </div>
@@ -197,15 +178,13 @@ export default function StatusPage() {
                   ? 'border-green-500/30 bg-green-500/5'
                   : result.state === 'error'
                   ? 'border-red-500/30 bg-red-500/5'
-                  : 'border-white/10 bg-white/5'
+                  : 'border-line bg-surface-raised'
               }`}
             >
               <div className="flex items-center justify-between mb-3">
-                <span className="text-[9px] font-bold tracking-widest text-gray-500 uppercase">
-                  {label}
-                </span>
+                <span className="text-xs font-bold tracking-widest text-ink-subtle uppercase">{label}</span>
                 <span
-                  className={`text-[9px] font-bold tracking-widest uppercase px-2 py-0.5 rounded-full border ${
+                  className={`text-[10px] font-bold tracking-widest uppercase px-2 py-0.5 rounded-full border ${
                     result.state === 'ok'
                       ? 'border-green-500/40 text-green-400 bg-green-500/10'
                       : result.state === 'error'
@@ -213,90 +192,66 @@ export default function StatusPage() {
                       : 'border-yellow-500/40 text-yellow-400 bg-yellow-500/10'
                   }`}
                 >
-                  {result.state === 'ok'
-                    ? 'OK'
-                    : result.state === 'error'
-                    ? 'ERROR'
-                    : 'CHECKING'}
+                  {result.state === 'ok' ? 'OK' : result.state === 'error' ? 'ERROR' : 'CHECKING'}
                 </span>
               </div>
-              <p
-                className={`text-xs font-mono break-all leading-relaxed ${
-                  result.state === 'error' ? 'text-red-400' : 'text-gray-300'
-                }`}
-              >
-                {result.state === 'loading' ? (
-                  <span className="animate-pulse">—</span>
-                ) : (
-                  detail ?? '—'
-                )}
+              <p className={`text-sm font-mono break-all leading-relaxed ${result.state === 'error' ? 'text-red-400' : 'text-ink-muted'}`}>
+                {result.state === 'loading' ? <span className="animate-pulse">—</span> : (detail ?? '—')}
               </p>
               {result.latencyMs !== undefined && (
-                <p className="text-[9px] text-gray-600 font-mono mt-2">
-                  {result.latencyMs}ms
-                </p>
+                <p className="text-xs text-ink-subtle font-mono mt-2">{result.latencyMs}ms</p>
               )}
             </div>
           ))}
         </div>
 
         {/* Cache */}
-        <div className="glass-card p-6 border-white/10 bg-white/5">
-          <h2 className="text-xs font-bold tracking-widest text-gray-400 uppercase mb-4">
-            Local Cache
-          </h2>
-          {cacheInfo ? (
+        <div className="glass-card p-6">
+          <h2 className="text-sm font-bold tracking-widest text-ink-muted uppercase mb-4">Local Cache</h2>
+          {cacheInfo && (cacheInfo.count > 0 || cacheInfo.lastSyncedId > 0) ? (
             <div className="grid grid-cols-2 gap-6">
               <div>
-                <p className="text-[9px] text-gray-500 uppercase tracking-widest mb-1">Cached Vows</p>
-                <p className="text-3xl font-bebas font-bold text-white">{cacheInfo.count}</p>
+                <p className="text-xs text-ink-subtle uppercase tracking-widest mb-1">Cached Vows</p>
+                <p className="text-3xl font-bebas font-bold text-ink">{cacheInfo.count}</p>
               </div>
               <div>
-                <p className="text-[9px] text-gray-500 uppercase tracking-widest mb-1">Last Synced ID</p>
+                <p className="text-xs text-ink-subtle uppercase tracking-widest mb-1">Last Synced ID</p>
                 <p className="text-3xl font-bebas font-bold text-purple-400">#{cacheInfo.lastSyncedId}</p>
               </div>
             </div>
           ) : (
-            <p className="text-xs text-gray-500 font-mono">No cache found in localStorage.</p>
+            <p className="text-sm text-ink-subtle font-mono">No cache found in localStorage.</p>
           )}
           <button
             onClick={() => {
               localStorage.removeItem('deadlock_vows_cache');
               setCacheInfo({ count: 0, lastSyncedId: 0 });
             }}
-            className="mt-4 text-[10px] font-bold text-red-400/70 hover:text-red-400 tracking-widest uppercase transition-colors"
+            className="mt-4 text-xs font-bold text-red-400/70 hover:text-red-400 tracking-widest uppercase transition-colors"
           >
             Clear Cache
           </button>
         </div>
 
         {/* Environment */}
-        <div className="glass-card p-6 border-white/10 bg-white/5">
-          <h2 className="text-xs font-bold tracking-widest text-gray-400 uppercase mb-4">
-            Environment
-          </h2>
-          <div className="space-y-3">
+        <div className="glass-card p-6">
+          <h2 className="text-sm font-bold tracking-widest text-ink-muted uppercase mb-4">Environment</h2>
+          <div className="space-y-4">
             {envVars.map(({ key, value }) => (
-              <div key={key} className="flex items-center justify-between gap-4 border-b border-white/5 pb-3 last:border-0 last:pb-0">
-                <span className="text-[10px] font-mono text-gray-500">{key}</span>
-                <span
-                  className={`text-[10px] font-mono font-bold ${
-                    value ? 'text-green-400' : 'text-red-400'
-                  }`}
-                >
+              <div key={key} className="flex items-start justify-between gap-4 border-b border-line pb-4 last:border-0 last:pb-0">
+                <span className="text-sm font-mono text-ink-muted shrink-0">{key}</span>
+                <span className={`text-sm font-mono font-bold text-right break-all ${value ? 'text-green-400' : 'text-red-400'}`}>
                   {value ?? 'NOT SET'}
                 </span>
               </div>
             ))}
-            <div className="flex items-center justify-between gap-4 border-b border-white/5 pb-3">
-              <span className="text-[10px] font-mono text-gray-500">CONTRACT_ADDRESS (resolved)</span>
-              <span className="text-[10px] font-mono text-gray-300 break-all text-right max-w-[60%]">
-                {contractDetails.address}
-              </span>
+            <div className="flex items-start justify-between gap-4 border-b border-line pb-4">
+              <span className="text-sm font-mono text-ink-muted shrink-0">CONTRACT_ADDRESS (resolved)</span>
+              <span className="text-sm font-mono text-ink text-right break-all max-w-[60%]">{contractDetails.address}</span>
             </div>
-            <div className="flex items-center justify-between gap-4">
-              <span className="text-[10px] font-mono text-gray-500">CONTRACT_NAME (resolved)</span>
-              <span className="text-[10px] font-mono text-gray-300">{contractDetails.name}</span>
+            <div className="flex items-start justify-between gap-4">
+              <span className="text-sm font-mono text-ink-muted shrink-0">CONTRACT_NAME (resolved)</span>
+              <span className="text-sm font-mono text-ink">{contractDetails.name}</span>
             </div>
           </div>
         </div>

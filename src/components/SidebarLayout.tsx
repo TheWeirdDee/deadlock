@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation';
 import { Header } from '@/components/Header';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
-export function SidebarLayout({ children, activePage }: { children: React.ReactNode, activePage: 'analytics' | 'dashboard' | 'docs' | 'feed' | 'leaderboard' | 'profile' | 'rivals' | 'status' }) {
+export function SidebarLayout({ children, activePage }: { children: React.ReactNode, activePage: 'analytics' | 'dashboard' | 'docs' | 'feed' | 'leaderboard' | 'profile' | 'rivals' | 'settings' | 'status' }) {
   const { doOpenAuth } = useConnect();
   const router = useRouter();
   const [userData, setUserData] = useState<any>(null);
@@ -138,6 +138,11 @@ export function SidebarLayout({ children, activePage }: { children: React.ReactN
               <li>
                 <Link href="/status" className={`flex items-center px-2 py-2 rounded-md transition-colors ${activePage === 'status' ? 'bg-purple-500/20 text-purple-400' : 'hover:bg-surface-raised hover:text-ink'}`}>
                   System Status
+                </Link>
+              </li>
+              <li>
+                <Link href="/settings" className={`flex items-center px-2 py-2 rounded-md transition-colors ${activePage === 'settings' ? 'bg-purple-500/20 text-purple-400' : 'hover:bg-surface-raised hover:text-ink'}`}>
+                  Settings
                 </Link>
               </li>
             </ul>

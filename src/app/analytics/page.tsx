@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { AppConfig, UserSession } from '@stacks/connect';
 import { SidebarLayout } from '@/components/SidebarLayout';
 import { getVowCount, getVow } from '@/lib/contract';
 import { VOW_STATUS } from '@/lib/types';
@@ -34,6 +35,23 @@ export default function AnalyticsPage() {
   const [vows, setVows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('All');
+  const [userAddress, setUserAddress] = useState<string | null>(null);
+
+  const userSessionRef = useRef<UserSession | null>(null);
+  if (!userSessionRef.current && typeof window !== 'undefined') {
+    const appConfig = new AppConfig(['store_write', 'publish_data']);
+    userSessionRef.current = new UserSession({ appConfig });
+  }
+  const userSession = userSessionRef.current;
+
+  useEffect(() => {
+    if (userSession && userSession.isUserSignedIn()) {
+      const data = userSession.loadUserData();
+      const addr = data?.profile?.stxAddress?.mainnet || data?.profile?.stxAddress?.testnet || null;
+      setUserAddress(addr);
+    }
+    loadData();
+  }, []);
 
   async function loadData(forceFullResync = false) {
     try {
@@ -86,10 +104,16 @@ export default function AnalyticsPage() {
     }
   }
 
-  useEffect(() => { loadData(); }, []);
+  // Personal mode: filter by current wallet; global mode: all vows
+  const displayVows = useMemo(() => {
+    if (!userAddress) return vows;
+    return vows.filter(v => (v.creator ?? v['creator']) === userAddress);
+  }, [vows, userAddress]);
+
+  const isPersonal = !!userAddress;
 
   const computedStats = useMemo(() => {
-    if (vows.length === 0) return null;
+    if (displayVows.length === 0 && !loading) return null;
     let totalSTX = 0;
     let completed = 0;
     let failed = 0;
@@ -97,7 +121,7 @@ export default function AnalyticsPage() {
     let challenged = 0;
     let totalVotes = 0;
 
-    for (const v of vows) {
+    for (const v of displayVows) {
       totalSTX += Number(v.stakeAmount ?? v['stake-amount'] ?? 0) / 1_000_000;
       totalSTX += Number(v.rivalStake ?? v['rival-stake'] ?? 0) / 1_000_000;
       const s = Number(v.status);
@@ -108,32 +132,33 @@ export default function AnalyticsPage() {
       totalVotes += Number(v.yesVotes ?? v['yes-votes'] ?? 0) + Number(v.noVotes ?? v['no-votes'] ?? 0);
     }
 
-    const settled = completed + failed;
-    const successRate = settled === 0 ? 0 : Math.round((completed / settled) * 100);
-    const stxLabel = totalSTX >= 1000 ? `${(totalSTX / 1000).toFixed(1)}K` : totalSTX.toFixed(1);
+    const proofSubmitted = completed + challenged;
+    const stxLabel = totalSTX >= 1000 ? `${(totalSTX / 1000).toFixed(1)}K` : totalSTX < 0.01 && totalSTX > 0 ? totalSTX.toFixed(4) : totalSTX.toFixed(2);
     const votesLabel = totalVotes >= 1000 ? `${(totalVotes / 1000).toFixed(1)}K` : String(totalVotes);
 
-    // CHALLENGED (status=4) = proof submitted on-chain, awaiting community finalization
-    // These are genuine completion attempts — count them with completed for the headline rate
-    const proofSubmitted = completed + challenged;
-    const proofRate = vows.length === 0 ? 0 : Math.round((proofSubmitted / vows.length) * 100);
-
     return {
-      cards: [
-        { label: 'Total STX Staked', value: `${stxLabel} STX`, sub: `across ${vows.length} vows`, color: 'text-purple-400' },
-        { label: 'Proof Submitted', value: proofSubmitted.toLocaleString(), sub: `${completed} finalized · ${challenged} awaiting community vote`, color: 'text-green-400' },
-        { label: 'Expired Without Proof', value: failed.toLocaleString(), sub: `${active} still active · deadline passed, no proof`, color: 'text-red-400' },
-        { label: 'Total Votes Cast', value: votesLabel, sub: 'community challenge votes', color: 'text-pink-400' },
-      ],
+      cards: isPersonal
+        ? [
+            { label: 'My Total Vows', value: displayVows.length.toLocaleString(), sub: `${active} active · ${challenged} in review · ${completed} completed`, color: 'text-blue-400' },
+            { label: 'Proof Submitted', value: proofSubmitted.toLocaleString(), sub: `${completed} finalized · ${challenged} awaiting vote`, color: 'text-green-400' },
+            { label: 'Expired Without Proof', value: failed.toLocaleString(), sub: `deadline passed, no proof`, color: 'text-red-400' },
+            { label: 'My STX Staked', value: `${stxLabel} STX`, sub: `across ${displayVows.length} vows`, color: 'text-purple-400' },
+          ]
+        : [
+            { label: 'Total STX Staked', value: `${stxLabel} STX`, sub: `across ${vows.length} vows`, color: 'text-purple-400' },
+            { label: 'Proof Submitted', value: proofSubmitted.toLocaleString(), sub: `${completed} finalized · ${challenged} awaiting community vote`, color: 'text-green-400' },
+            { label: 'Expired Without Proof', value: failed.toLocaleString(), sub: `${active} still active · deadline passed, no proof`, color: 'text-red-400' },
+            { label: 'Total Votes Cast', value: votesLabel, sub: 'community challenge votes', color: 'text-pink-400' },
+          ],
       completed, failed, active, challenged,
     };
-  }, [vows]);
+  }, [displayVows, vows, isPersonal, loading]);
 
-  // Group vows into up to 10 buckets by ID for bar chart
   const barData = useMemo(() => {
-    if (vows.length === 0) return [];
-    const sorted = [...vows].sort((a, b) => (a.id ?? 0) - (b.id ?? 0));
+    if (displayVows.length === 0) return [];
+    const sorted = [...displayVows].sort((a, b) => (a.id ?? 0) - (b.id ?? 0));
     const BUCKETS = Math.min(10, sorted.length);
+    if (BUCKETS === 0) return [];
     const size = Math.ceil(sorted.length / BUCKETS);
     const result: { name: string; vows: number }[] = [];
     for (let i = 0; i < sorted.length; i += size) {
@@ -141,12 +166,11 @@ export default function AnalyticsPage() {
       result.push({ name: `#${bucket[0].id}–${bucket[bucket.length - 1].id}`, vows: bucket.length });
     }
     return result;
-  }, [vows]);
+  }, [displayVows]);
 
-  // Cumulative STX staked for area chart
   const areaData = useMemo(() => {
-    if (vows.length === 0) return [];
-    const sorted = [...vows].sort((a, b) => (a.id ?? 0) - (b.id ?? 0));
+    if (displayVows.length === 0) return [];
+    const sorted = [...displayVows].sort((a, b) => (a.id ?? 0) - (b.id ?? 0));
     const POINTS = Math.min(10, sorted.length);
     const step = Math.max(1, Math.floor(sorted.length / POINTS));
     let cumulative = 0;
@@ -154,24 +178,24 @@ export default function AnalyticsPage() {
     sorted.forEach((v, i) => {
       cumulative += Number(v.stakeAmount ?? v['stake-amount'] ?? 0) / 1_000_000;
       if (i % step === 0 || i === sorted.length - 1) {
-        result.push({ name: `#${v.id}`, value: Math.round(cumulative) });
+        result.push({ name: `#${v.id}`, value: parseFloat(cumulative.toFixed(4)) });
       }
     });
     return result;
-  }, [vows]);
+  }, [displayVows]);
 
   const recentActivity = useMemo(() => {
-    return [...vows]
+    return [...displayVows]
       .sort((a, b) => (b.id ?? 0) - (a.id ?? 0))
       .slice(0, 15)
       .map(v => ({
         user: fmtAddr(v.creator ?? ''),
         vowId: v.id,
-        amount: `${(Number(v.stakeAmount ?? v['stake-amount'] ?? 0) / 1_000_000).toFixed(1)} STX`,
+        amount: `${(Number(v.stakeAmount ?? v['stake-amount'] ?? 0) / 1_000_000).toFixed(4)} STX`,
         action: vowAction(Number(v.status)),
         status: vowStatusLabel(Number(v.status)),
       }));
-  }, [vows]);
+  }, [displayVows]);
 
   const filteredActivity = useMemo(() => {
     if (activeTab === 'All') return recentActivity;
@@ -180,20 +204,21 @@ export default function AnalyticsPage() {
 
   const statusColor = (status: string) => {
     if (status === 'Completed') return 'bg-green-500/10 text-green-400';
-    if (status === 'Failed') return 'bg-red-500/10 text-red-400';
+    if (status === 'Expired') return 'bg-red-500/10 text-red-400';
     if (status === 'Challenged') return 'bg-blue-500/10 text-blue-400';
     return 'bg-yellow-500/10 text-yellow-400';
   };
 
   const dotColor = (status: string) => {
     if (status === 'Completed') return 'bg-green-400';
-    if (status === 'Failed') return 'bg-red-400';
+    if (status === 'Expired') return 'bg-red-400';
     if (status === 'Challenged') return 'bg-blue-400';
     return 'bg-yellow-400';
   };
 
   return (
     <SidebarLayout activePage="analytics">
+      {/* Hero banner */}
       <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl p-6 flex flex-col sm:flex-row items-center justify-between shadow-[0_0_30px_rgba(168,85,247,0.2)] mb-8">
         <div>
           <h2 className="text-white font-bebas text-2xl tracking-widest mb-1 flex items-center gap-2">
@@ -207,8 +232,16 @@ export default function AnalyticsPage() {
         </button>
       </div>
 
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bebas tracking-widest">Overview</h2>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-2xl font-bebas tracking-widest">
+            {isPersonal ? 'YOUR ANALYTICS' : 'PROTOCOL ANALYTICS'}
+          </h2>
+          {isPersonal && (
+            <p className="text-xs text-ink-muted font-mono mt-0.5 truncate max-w-xs">{userAddress}</p>
+          )}
+        </div>
         <div className="flex items-center gap-3">
           <button
             onClick={() => loadData(true)}
@@ -232,12 +265,14 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      <div className="mb-6 p-4 rounded-xl border border-blue-500/20 bg-blue-500/5 text-xs text-blue-300/80 leading-relaxed font-space">
-        <span className="font-bold text-blue-400 tracking-widest uppercase mr-2">How completion works:</span>
-        Submitting proof sets a vow to <span className="font-bold">Under Challenge</span> (status 4) — the community votes, then anyone can call <code className="bg-black/30 px-1 rounded">finalize-challenged-vow</code> to officially mark it Completed. Vows that expire without proof submitted can be swept to Expired by anyone via <code className="bg-black/30 px-1 rounded">claim-failure</code>.
+      {/* Callout — always readable in both modes */}
+      <div className="mb-6 p-4 rounded-xl border border-blue-500/30 bg-blue-500/10 text-xs leading-relaxed font-space text-ink-muted">
+        <span className="font-bold text-blue-500 tracking-widest uppercase mr-2">How completion works:</span>
+        Submitting proof sets a vow to <span className="font-bold text-ink">Under Challenge</span> (status 4) — the community votes, then anyone can call <code className="bg-black/10 px-1 rounded">finalize-challenged-vow</code> to officially mark it Completed. Vows that expire without proof submitted can be swept to Expired by anyone via <code className="bg-black/10 px-1 rounded">claim-failure</code>.
       </div>
 
-      {loading && vows.length === 0 ? (
+      {/* Stats cards */}
+      {loading && displayVows.length === 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {[1, 2, 3, 4].map(i => (
             <div key={i} className="glass-card p-6 h-28 animate-pulse" />
@@ -248,21 +283,22 @@ export default function AnalyticsPage() {
           {(computedStats?.cards ?? []).map((stat, idx) => (
             <div key={idx} className="glass-card p-6 flex flex-col justify-between">
               <div className="flex justify-between items-start mb-4">
-                <h3 className="text-xs text-gray-400 uppercase tracking-widest">{stat.label}</h3>
+                <h3 className="text-xs text-ink-subtle uppercase tracking-widest">{stat.label}</h3>
               </div>
-              <p className="text-3xl font-bebas tracking-wider text-white mb-2">{stat.value}</p>
+              <p className="text-3xl font-bebas tracking-wider text-ink mb-2">{stat.value}</p>
               <p className={`text-[10px] ${stat.color} font-bold tracking-widest`}>{stat.sub}</p>
             </div>
           ))}
         </div>
       )}
 
+      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <div className="glass-card p-6 lg:col-span-2">
           <div className="flex justify-between items-center mb-6">
             <div>
-              <h3 className="text-xs text-gray-400 uppercase tracking-widest mb-1">Vows by ID Range</h3>
-              <p className="text-2xl font-bebas tracking-wider text-white">{vows.length.toLocaleString()} Total</p>
+              <h3 className="text-xs text-ink-subtle uppercase tracking-widest mb-1">Vows by ID Range</h3>
+              <p className="text-2xl font-bebas tracking-wider text-ink">{displayVows.length.toLocaleString()} Total</p>
               {loading && <p className="text-[10px] text-purple-400 font-bold tracking-widest animate-pulse">SYNCING ON-CHAIN...</p>}
             </div>
           </div>
@@ -282,14 +318,16 @@ export default function AnalyticsPage() {
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex items-center justify-center h-full text-gray-600 text-xs">Loading chart data...</div>
+              <div className="flex items-center justify-center h-full text-ink-subtle text-xs">
+                {isPersonal && displayVows.length === 0 && !loading ? 'No vows found for your wallet yet.' : 'Loading chart data...'}
+              </div>
             )}
           </div>
         </div>
 
         <div className="glass-card p-6">
-          <h3 className="text-xs text-gray-400 uppercase tracking-widest mb-1">Cumulative STX Staked</h3>
-          <p className="text-2xl font-bebas tracking-wider text-white mb-1">
+          <h3 className="text-xs text-ink-subtle uppercase tracking-widest mb-1">Cumulative STX Staked</h3>
+          <p className="text-2xl font-bebas tracking-wider text-ink mb-1">
             {areaData.length > 0 ? `${areaData[areaData.length - 1].value.toLocaleString()} STX` : '---'}
           </p>
           <p className="text-[10px] text-green-400 font-bold tracking-widest mb-6">all-time on-chain</p>
@@ -320,41 +358,44 @@ export default function AnalyticsPage() {
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex items-center justify-center h-full text-gray-600 text-xs">Loading chart data...</div>
+              <div className="flex items-center justify-center h-full text-ink-subtle text-xs">No data yet.</div>
             )}
           </div>
         </div>
       </div>
 
+      {/* Activity feed */}
       <div className="glass-card p-6">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bebas tracking-widest">Recent Activity</h2>
-          <span className="text-xs text-gray-500 font-mono">latest {recentActivity.length} vows</span>
+          <h2 className="text-xl font-bebas tracking-widest">
+            {isPersonal ? 'YOUR ACTIVITY' : 'RECENT ACTIVITY'}
+          </h2>
+          <span className="text-xs text-ink-subtle font-mono">latest {recentActivity.length} vows</span>
         </div>
 
-        <div className="flex gap-6 border-b border-white/10 mb-6 overflow-x-auto pb-2">
+        <div className="flex gap-6 border-b border-line mb-6 overflow-x-auto pb-2">
           {['All', 'Active', 'Completed', 'Expired', 'Challenged'].map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`text-xs font-bold tracking-widest uppercase whitespace-nowrap transition-colors ${activeTab === tab ? 'text-purple-400 border-b-2 border-purple-400 pb-2 -mb-[9px]' : 'text-gray-500 hover:text-gray-300'}`}
+              className={`text-xs font-bold tracking-widest uppercase whitespace-nowrap transition-colors ${activeTab === tab ? 'text-purple-400 border-b-2 border-purple-400 pb-2 -mb-[9px]' : 'text-ink-subtle hover:text-ink'}`}
             >
               {tab}
             </button>
           ))}
         </div>
 
-        {loading && vows.length === 0 ? (
+        {loading && displayVows.length === 0 ? (
           <div className="space-y-3">
-            {[1, 2, 3].map(i => <div key={i} className="h-10 bg-white/5 animate-pulse rounded" />)}
+            {[1, 2, 3].map(i => <div key={i} className="h-10 bg-surface-raised animate-pulse rounded" />)}
           </div>
         ) : filteredActivity.length === 0 ? (
-          <p className="text-center text-gray-600 text-sm py-8">No {activeTab !== 'All' ? activeTab.toLowerCase() : ''} vows found.</p>
+          <p className="text-center text-ink-subtle text-sm py-8">No {activeTab !== 'All' ? activeTab.toLowerCase() : ''} vows found.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left min-w-[600px]">
               <thead>
-                <tr className="text-[10px] text-gray-500 uppercase tracking-widest bg-white/5 rounded-t-lg">
+                <tr className="text-[10px] text-ink-subtle uppercase tracking-widest bg-surface-raised rounded-t-lg">
                   <th className="p-3 font-normal rounded-tl-lg">Creator</th>
                   <th className="p-3 font-normal">Vow</th>
                   <th className="p-3 font-normal">Stake</th>
@@ -364,11 +405,11 @@ export default function AnalyticsPage() {
               </thead>
               <tbody>
                 {filteredActivity.map((activity, idx) => (
-                  <tr key={idx} className="border-b border-white/5 hover:bg-white/5 transition-colors text-sm">
-                    <td className="p-3 font-mono text-gray-300">{activity.user}</td>
-                    <td className="p-3 text-gray-500 text-xs font-mono">#{activity.vowId}</td>
-                    <td className="p-3 font-bold text-white">{activity.amount}</td>
-                    <td className="p-3 text-xs tracking-widest text-gray-400">{activity.action}</td>
+                  <tr key={idx} className="border-b border-line hover:bg-surface-raised transition-colors text-sm">
+                    <td className="p-3 font-mono text-ink-muted">{activity.user}</td>
+                    <td className="p-3 text-ink-subtle text-xs font-mono">#{activity.vowId}</td>
+                    <td className="p-3 font-bold text-ink">{activity.amount}</td>
+                    <td className="p-3 text-xs tracking-widest text-ink-muted">{activity.action}</td>
                     <td className="p-3">
                       <span className={`text-[10px] px-2 py-1 rounded-full flex items-center w-max gap-1 ${statusColor(activity.status)}`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${dotColor(activity.status)}`}></span>

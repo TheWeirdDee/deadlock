@@ -35,11 +35,12 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('All');
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        let cachedVows: any[] = [];
-        let lastSyncedId = 0;
+  async function loadData(forceFullResync = false) {
+    try {
+      setLoading(true);
+      let cachedVows: any[] = [];
+      let lastSyncedId = 0;
+      if (!forceFullResync) {
         try {
           const stored = localStorage.getItem('deadlock_vows_cache');
           if (stored) {
@@ -50,40 +51,42 @@ export default function AnalyticsPage() {
             }
           }
         } catch {}
+      }
 
-        if (cachedVows.length > 0) {
-          setVows(cachedVows);
-          setLoading(false);
-        }
-
-        const chainCount = await getVowCount();
-        const updatedVows = [...cachedVows];
-
-        if (chainCount > lastSyncedId) {
-          for (let i = lastSyncedId + 1; i <= chainCount; i++) {
-            try {
-              const vow = await getVow(i);
-              if (vow) updatedVows.push({ ...vow, id: i });
-            } catch {}
-            await new Promise(r => setTimeout(r, 150));
-          }
-          try {
-            localStorage.setItem('deadlock_vows_cache', JSON.stringify({
-              lastSyncedId: chainCount,
-              vows: updatedVows,
-            }));
-          } catch {}
-        }
-
-        setVows(updatedVows);
-      } catch (e) {
-        console.error('[analytics] load error:', e);
-      } finally {
+      if (!forceFullResync && cachedVows.length > 0) {
+        setVows(cachedVows);
         setLoading(false);
       }
+
+      const chainCount = await getVowCount();
+      const updatedVows = forceFullResync ? [] : [...cachedVows];
+      const startId = forceFullResync ? 1 : lastSyncedId + 1;
+
+      if (chainCount >= startId) {
+        for (let i = startId; i <= chainCount; i++) {
+          try {
+            const vow = await getVow(i);
+            if (vow) updatedVows.push({ ...vow, id: i });
+          } catch {}
+          await new Promise(r => setTimeout(r, 150));
+        }
+        try {
+          localStorage.setItem('deadlock_vows_cache', JSON.stringify({
+            lastSyncedId: chainCount,
+            vows: updatedVows,
+          }));
+        } catch {}
+      }
+
+      setVows(updatedVows);
+    } catch (e) {
+      console.error('[analytics] load error:', e);
+    } finally {
+      setLoading(false);
     }
-    loadData();
-  }, []);
+  }
+
+  useEffect(() => { loadData(); }, []);
 
   const computedStats = useMemo(() => {
     if (vows.length === 0) return null;
@@ -192,7 +195,30 @@ export default function AnalyticsPage() {
         </button>
       </div>
 
-      <h2 className="text-2xl font-bebas tracking-widest mb-6">Overview</h2>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-bebas tracking-widest">Overview</h2>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => loadData(true)}
+            disabled={loading}
+            className="text-xs px-4 py-2 border border-white/20 hover:border-red-500/50 hover:bg-red-500/5 disabled:opacity-50 text-gray-400 hover:text-red-400 font-bold tracking-widest uppercase rounded-full transition-all duration-300 font-bebas"
+          >
+            FULL RESYNC
+          </button>
+          <button
+            onClick={() => loadData()}
+            disabled={loading}
+            className="text-xs px-4 py-2 border border-white/20 hover:border-white/50 hover:bg-white/5 disabled:opacity-50 text-white font-bold tracking-widest uppercase rounded-full transition-all duration-300 font-bebas flex items-center gap-2"
+          >
+            {loading ? (
+              <>
+                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                SYNCING...
+              </>
+            ) : 'SYNC NEW'}
+          </button>
+        </div>
+      </div>
 
       {loading && vows.length === 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

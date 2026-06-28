@@ -87,12 +87,14 @@ export default function DashboardPage() {
         const raw = localStorage.getItem('pending_vows');
         if (raw) {
           const parsed = JSON.parse(raw);
-          pending = parsed.filter((p: any) =>
+          const stillPending = parsed.filter((p: any) =>
             !updatedVows.some(v => v.title === p.title && v.description === p.description)
           );
-          if (pending.length !== parsed.length) {
-            localStorage.setItem('pending_vows', JSON.stringify(pending));
+          if (stillPending.length !== parsed.length) {
+            localStorage.setItem('pending_vows', JSON.stringify(stillPending));
           }
+          // Only show pending vows that belong to this wallet
+          pending = stillPending.filter((p: any) => !p.creator || p.creator === address);
         }
       } catch {}
 

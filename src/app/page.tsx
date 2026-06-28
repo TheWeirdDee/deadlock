@@ -8,6 +8,7 @@ import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import { useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { getVowCount, getVow, contractDetails } from '@/lib/contract';
 import { loadVowCache, saveVowCache } from '@/lib/vowCache';
 import { VOW_TYPES, VOW_STATUS } from '@/lib/types';
@@ -76,6 +77,7 @@ function WaitlistForm() {
 
 export default function Home() {
   const { doOpenAuth } = useConnect();
+  const router = useRouter();
   const [userData, setUserData] = useState<any>(null);
   const [vows, setVows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -101,6 +103,8 @@ export default function Home() {
     try {
       if (userSession && userSession.isUserSignedIn()) {
         setUserData(userSession.loadUserData());
+        router.replace('/dashboard');
+        return;
       }
     } catch (e) {
       if (process.env.NODE_ENV !== 'production') console.error('Auth session error', e);

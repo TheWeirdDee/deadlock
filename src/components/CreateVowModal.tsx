@@ -141,6 +141,9 @@ export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
       onFinish: (data) => {
         console.log('Transaction sent:', data);
         try {
+          const creatorAddress = userSession?.isUserSignedIn()
+            ? (userSession.loadUserData()?.profile?.stxAddress?.mainnet || userSession.loadUserData()?.profile?.stxAddress?.testnet || '')
+            : '';
           const pendingVow = {
             id: `pending-${data.txId}`,
             title,
@@ -148,7 +151,7 @@ export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
             vowType: type,
             'stake-amount': stakeAmount.toString(),
             'deadline-block': deadlineBlock,
-            creator: '',
+            creator: creatorAddress,
             status: 'PENDING'
           };
 

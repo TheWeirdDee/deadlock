@@ -27,22 +27,22 @@
 }
 
 html.light {
-  --bg:                 #f3f3f5;
-  --bg-card:            #ffffff;
-  --bg-raised:          rgba(0, 0, 0, 0.04);
-  --bg-hover:           rgba(0, 0, 0, 0.08);
+  --bg:                 #e4e5ea;
+  --bg-card:            #f0f0f4;
+  --bg-raised:          rgba(0, 0, 0, 0.05);
+  --bg-hover:           rgba(0, 0, 0, 0.09);
   --fg:                 #0a0a0a;
-  --fg-muted:           #6b7280;
-  --fg-subtle:          #9ca3af;
-  --border:             rgba(0, 0, 0, 0.10);
-  --border-strong:      rgba(0, 0, 0, 0.20);
-  --grid-line:          rgba(0, 0, 0, 0.04);
-  --glass-bg:           rgba(255, 255, 255, 0.85);
-  --glass-border:       rgba(0, 0, 0, 0.08);
-  --glass-hover-border: rgba(0, 0, 0, 0.18);
-  --scrollbar-track:    #e5e5e5;
-  --scrollbar-thumb:    #bbb;
-  --scrollbar-thumb-hover: #888;
+  --fg-muted:           #4b5563;
+  --fg-subtle:          #6b7280;
+  --border:             rgba(0, 0, 0, 0.12);
+  --border-strong:      rgba(0, 0, 0, 0.22);
+  --grid-line:          rgba(0, 0, 0, 0.05);
+  --glass-bg:           rgba(240, 240, 244, 0.90);
+  --glass-border:       rgba(0, 0, 0, 0.10);
+  --glass-hover-border: rgba(0, 0, 0, 0.20);
+  --scrollbar-track:    #d8d9de;
+  --scrollbar-thumb:    #a0a0a8;
+  --scrollbar-thumb-hover: #78788a;
 }
 
 @layer base {
@@ -220,3 +220,36 @@ html.light {
 .animate-orbit-3 {
   animation: rotate-clockwise 90s linear infinite;
 }
+
+/* ═══════════════════════════════════════════════════════
+   LIGHT MODE — remap hardcoded dark-first utility classes
+   ═══════════════════════════════════════════════════════ */
+
+/* Text */
+html.light .text-white    { color: var(--fg); }
+html.light .text-gray-100 { color: var(--fg); }
+html.light .text-gray-200 { color: var(--fg-muted); }
+html.light .text-gray-300 { color: var(--fg-muted); }
+html.light .text-gray-400 { color: var(--fg-muted); }
+html.light .text-gray-500 { color: var(--fg-subtle); }
+
+/* Borders — white-alpha borders become invisible on light bg */
+html.light [class*="border-white/"] { border-color: var(--border); }
+
+/* Subtle white backgrounds — remap to subtle dark overlays */
+html.light [class*="bg-white/5"]  { background-color: rgba(0, 0, 0, 0.03); }
+html.light [class*="bg-white/10"] { background-color: rgba(0, 0, 0, 0.05); }
+
+/* Decorative blobs: screen blend makes them invisible on light bg */
+html.light .mix-blend-screen { mix-blend-mode: multiply; }
+
+/* Restore original values inside sections that are intentionally always-dark */
+html.light [data-theme="dark"] .text-white    { color: #ffffff; }
+html.light [data-theme="dark"] .text-gray-100 { color: rgb(243 244 246); }
+html.light [data-theme="dark"] .text-gray-200 { color: rgb(229 231 235); }
+html.light [data-theme="dark"] .text-gray-300 { color: rgb(209 213 219); }
+html.light [data-theme="dark"] .text-gray-400 { color: rgb(156 163 175); }
+html.light [data-theme="dark"] .text-gray-500 { color: rgb(107 114 128); }
+html.light [data-theme="dark"] [class*="border-white/"] { border-color: revert; }
+html.light [data-theme="dark"] [class*="bg-white/"]     { background-color: revert; }
+html.light [data-theme="dark"] .mix-blend-screen { mix-blend-mode: screen; }

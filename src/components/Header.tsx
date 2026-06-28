@@ -41,7 +41,7 @@ export function Header({ userData, handleLogin, handleLogout }: HeaderProps) {
 
       <div className="flex gap-3 items-center">
         <ThemeToggle />
-        <NotificationBell />
+        {userData && <NotificationBell />}
         {userData ? (
           <div className="flex gap-3 items-center">
             <Link href="/dashboard" className="text-xs bg-surface-raised border border-line rounded-full px-4 py-2 hover:bg-surface-hover transition-colors text-ink hidden md:block tracking-widest font-bold">

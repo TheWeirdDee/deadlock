@@ -287,7 +287,7 @@ export default function Home() {
           <path d="M0,80 C360,130 720,20 1080,100 C1260,130 1380,100 1440,80 L1440,120 L0,120 Z" fill="#050505" />
         </svg>
 
-        <div className="bg-[#050505] border-y border-white/5 py-12 px-6 sm:px-12 md:px-24">
+        <div data-theme="dark" className="bg-[#050505] border-y border-white/5 py-12 px-6 sm:px-12 md:px-24">
           <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             <div id="analytics" className="lg:col-span-7 grid grid-cols-2 gap-6 text-left">
               <div>

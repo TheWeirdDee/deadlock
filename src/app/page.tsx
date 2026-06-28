@@ -269,7 +269,7 @@ export default function Home() {
           <div className="absolute bottom-[20%] left-[25%] text-xs text-ink-subtle font-bold select-none">✦</div>
           <div className="absolute top-[10%] right-[30%] w-1 h-1 bg-white rounded-full"></div>
 
-          <div className="relative w-[180px] sm:w-[230px] h-[180px] sm:h-[230px] rounded-full bg-gradient-to-tr from-purple-900/40 via-blue-900/30 to-black/80 border border-white/15 p-2 overflow-hidden shadow-[0_0_50px_rgba(147,51,234,0.2)]">
+          <div data-theme="dark" className="relative w-[180px] sm:w-[230px] h-[180px] sm:h-[230px] rounded-full bg-gradient-to-tr from-purple-900/40 via-blue-900/30 to-black/80 border border-white/15 p-2 overflow-hidden shadow-[0_0_50px_rgba(147,51,234,0.2)]">
             <div className="w-full h-full rounded-full overflow-hidden relative flex items-center justify-center bg-black/60">
               <img
                 src="/hero-skull.png"

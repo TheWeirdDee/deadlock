@@ -1,36 +1,11 @@
  'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { useConnect } from '@stacks/connect-react';
-import { AppConfig, UserSession } from '@stacks/connect';
+import { useState } from 'react';
 import { SidebarLayout } from '@/components/SidebarLayout';
 import { motion } from 'framer-motion';
-import { useRouter } from 'next/navigation';
 
 export default function DocsPage() {
-  const { doOpenAuth } = useConnect();
-  const router = useRouter();
-  const [userData, setUserData] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('overview');
-
-  const userSessionRef = useRef<UserSession | null>(null);
-  if (!userSessionRef.current && typeof window !== 'undefined') {
-    const appConfig = new AppConfig(['store_write', 'publish_data']);
-    userSessionRef.current = new UserSession({ appConfig });
-  }
-  const userSession = userSessionRef.current;
-
-  useEffect(() => {
-    if (userSession && userSession.isUserSignedIn()) {
-      setUserData(userSession.loadUserData());
-    }
-  }, []);
-
-  const handleLogin = () => doOpenAuth();
-  const handleLogout = () => {
-    userSession?.signUserOut();
-    router.push('/');
-  };
 
   const codeSnippet = `
 import { openContractCall } from '@stacks/connect';

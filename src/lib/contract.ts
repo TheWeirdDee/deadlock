@@ -36,7 +36,7 @@ const network = process.env.NEXT_PUBLIC_NETWORK === 'mainnet'
   : new StacksTestnet(networkOpts);
 
 async function withRetry<T>(fn: () => Promise<T>, attempts = 3, baseDelay = 500): Promise<T> {
-  let lastError: any;
+  let lastError: unknown;
   for (let i = 0; i < attempts; i++) {
     try {
       return await fn();

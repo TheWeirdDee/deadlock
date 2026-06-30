@@ -1,9 +1,8 @@
 ﻿'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { useConnect } from '@stacks/connect-react';
 import { AppConfig, UserSession } from '@stacks/connect';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { getVowCount, getVow } from '@/lib/contract';
 import { loadVowCache, patchVowInCache } from '@/lib/vowCache';
 import { VowCard } from '@/components/VowCard';

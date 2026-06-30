@@ -1,4 +1,6 @@
-﻿import { useState, useEffect } from 'react';
+﻿'use client';
+
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { VOW_TYPES, VOW_STATUS } from '@/lib/types';

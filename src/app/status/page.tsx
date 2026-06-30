@@ -224,7 +224,7 @@ export default function StatusPage() {
           )}
           <button
             onClick={() => {
-              localStorage.removeItem('deadlock_vows_cache');
+              try { localStorage.removeItem('deadlock_vows_cache'); } catch {}
               setCacheInfo({ count: 0, lastSyncedId: 0 });
             }}
             className="mt-4 text-xs font-bold text-red-400/70 hover:text-red-400 tracking-widest uppercase transition-colors"

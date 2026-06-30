@@ -61,13 +61,15 @@ export default function SettingsPage() {
       setUserData(userSession.loadUserData());
     }
 
-    // Read theme
-    const stored = localStorage.getItem('deadlock_theme');
-    setTheme(stored === 'light' ? 'light' : 'dark');
+    try {
+      const stored = localStorage.getItem('deadlock_theme');
+      setTheme(stored === 'light' ? 'light' : 'dark');
+    } catch {}
 
-    // Notifications pref
-    const notif = localStorage.getItem('deadlock_notif_deadlines');
-    setNotifDeadlines(notif === 'true');
+    try {
+      const notif = localStorage.getItem('deadlock_notif_deadlines');
+      setNotifDeadlines(notif === 'true');
+    } catch {}
 
     // Cache info
     try {
@@ -90,7 +92,7 @@ export default function SettingsPage() {
   function handleThemeChange(isDark: boolean) {
     const next = isDark ? 'dark' : 'light';
     setTheme(next);
-    localStorage.setItem('deadlock_theme', next);
+    try { localStorage.setItem('deadlock_theme', next); } catch {}
     if (next === 'light') {
       document.documentElement.classList.add('light');
     } else {
@@ -100,11 +102,11 @@ export default function SettingsPage() {
 
   function handleNotifChange(v: boolean) {
     setNotifDeadlines(v);
-    localStorage.setItem('deadlock_notif_deadlines', String(v));
+    try { localStorage.setItem('deadlock_notif_deadlines', String(v)); } catch {}
   }
 
   function handleClearCache() {
-    localStorage.removeItem('deadlock_vows_cache');
+    try { localStorage.removeItem('deadlock_vows_cache'); } catch {}
     setCacheInfo(null);
     setCleared(true);
     setTimeout(() => setCleared(false), 2000);

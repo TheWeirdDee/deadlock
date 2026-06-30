@@ -6,11 +6,13 @@ export function ThemeToggle() {
   const [light, setLight] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem('deadlock_theme');
-    if (stored === 'light') {
-      document.documentElement.classList.add('light');
-      setLight(true);
-    }
+    try {
+      const stored = localStorage.getItem('deadlock_theme');
+      if (stored === 'light') {
+        document.documentElement.classList.add('light');
+        setLight(true);
+      }
+    } catch {}
   }, []);
 
   const toggle = () => {
@@ -18,10 +20,10 @@ export function ThemeToggle() {
     setLight(next);
     if (next) {
       document.documentElement.classList.add('light');
-      localStorage.setItem('deadlock_theme', 'light');
+      try { localStorage.setItem('deadlock_theme', 'light'); } catch {}
     } else {
       document.documentElement.classList.remove('light');
-      localStorage.setItem('deadlock_theme', 'dark');
+      try { localStorage.setItem('deadlock_theme', 'dark'); } catch {}
     }
   };
 

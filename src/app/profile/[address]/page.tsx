@@ -156,7 +156,6 @@ export default function ProfilePage() {
     badgeIcon = '⚔️';
   }
 
-  const formatFullAddress = (addr: string) => addr;
   const formatShortAddress = (addr: string) => `${addr.slice(0, 6)}...${addr.slice(-6)}`;
 
   const handleCopyAddress = () => {

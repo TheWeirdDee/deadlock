@@ -139,7 +139,6 @@ export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
       anchorMode: AnchorMode.Any,
       postConditionMode: PostConditionMode.Allow,
       onFinish: (data) => {
-        console.log('Transaction sent:', data);
         try {
           const creatorAddress = userSession?.isUserSignedIn()
             ? (userSession.loadUserData()?.profile?.stxAddress?.mainnet || userSession.loadUserData()?.profile?.stxAddress?.testnet || '')
@@ -163,9 +162,7 @@ export function CreateVowModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
         }
         onClose();
       },
-      onCancel: () => {
-        console.log('Transaction cancelled');
-      },
+      onCancel: () => {},
     });
   };
 
